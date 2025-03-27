@@ -42,8 +42,8 @@ class CogPhysLoader(BaseLoader):
             data_path(string): path to the folder containing all data.
             config_data(CfgNode): data settings(ref:config.py).
         """
-        self.inputs = list()
-        self.labels = list()
+        self.inputs = {}
+        self.labels = {}
         self.name = name
         self.data_path = data_path
         self.cached_path = config_data.DATA_PATH
@@ -65,6 +65,7 @@ class CogPhysLoader(BaseLoader):
         self.label_preproc = config_data.COGPHYS.LABEL_TYPE
         self.seq_len = config_data.COGPHYS.SEQ_LENGTH
         self.ret_dict = config_data.COGPHYS.RET_DICT
+        self.example_key = self.input_keys[0]
 
         # samp_freq
         self.target_fs = config_data.FS
@@ -80,8 +81,9 @@ class CogPhysLoader(BaseLoader):
 
     def __len__(self):
         """Returns the length of the dataset."""
-        return len(self.inputs)
+        return len(self.inputs[self.example_key])
     
+    @torch.no_grad()
     def preproc_get_item_data(self, data):
         for key, preproc_list in zip(self.input_keys, self.input_preproc):
             for preproc in preproc_list:
@@ -99,6 +101,7 @@ class CogPhysLoader(BaseLoader):
                     raise ValueError(f'Unsupported Preprocessing Type! Got *{preproc}*')
         return data
 
+    @torch.no_grad()
     def preproc_get_item_label(self, data):
         for key, preproc_list in zip(self.label_keys, self.label_preproc):
             for preproc in preproc_list:
@@ -117,11 +120,11 @@ class CogPhysLoader(BaseLoader):
                     raise ValueError(f'Unsupported Preprocessing Type! Got *{preproc}*')
         return data
 
+    @torch.no_grad()
     def __getitem__(self, index):
         """Returns a clip of video(3,T,W,H) and it's corresponding signals(T)."""
         # from the self.inputs dict and self.lavels dict, get the data and label for the index
-        example_key = self.input_keys[0]
-        example_file = self.inputs[example_key][index]
+        example_file = self.inputs[self.example_key][index]
         # get the folder in which the file is located
         participant_task = example_file.split(os.sep)[-2]
         # get the chunk_id of the file
@@ -153,8 +156,8 @@ class CogPhysLoader(BaseLoader):
             else:
                 raise ValueError('Unsupported Data Format!')
         if not self.ret_dict:
-            data = torch.cat([data[key] for key in self.input_keys], dim=-1)
-            label = torch.cat([label[key] for key in self.label_keys], dim=-1)
+            data = torch.cat([data[key].cpu() for key in self.input_keys], dim=-1)
+            label = torch.cat([label[key].cpu() for key in self.label_keys], dim=-1)
         return data, label, participant_task, chunk_id
 
     def load_preprocessed_data(self):
@@ -172,21 +175,27 @@ class CogPhysLoader(BaseLoader):
             chosen_fold = fold_dict[self.fold_num]
         inputs_ids = chosen_fold[self.name] # train/test/valid based on name
         input_folders = [f for f in all_inputs if f.split('_')[0] in inputs_ids]
-        # Read the file type (RGB or NIR or Thermal Above/Below).
-        # file name are of the form v10_still/ppg_0.npy. Read only from the folders in input_folders
-        # TODO: THis reads the full dataset. Read only the folder in input_folders
-        self.inputs = {key: sorted(glob.glob(os.path.join(self.data_path,f"*/{key}_*.npy")))
-                            for key in self.input_keys}
-        self.labels = {key: sorted(glob.glob(os.path.join(self.data_path,f"*/{key}_*.npy")))
-                            for key in self.label_keys}
-        # make sure that the input and label files are the same other than the key
-        example_key = self.input_keys[0]
+        # Read files from the folders in input_folders: Structure "folder/key_*.npy"
         for key in self.input_keys:
-            assert self.inputs[key] == [i.replace(example_key, key) for i in self.inputs[example_key]]
+            self.inputs[key] = []
+            for folder in input_folders:
+                all_files = sorted(glob.glob(os.path.join(self.data_path, folder, f"{key}_*.npy")))
+                self.inputs[key].extend(all_files)
         for key in self.label_keys:
-            assert self.labels[key] == [i.replace(example_key, key) for i in self.inputs[example_key]]
-        self.preprocessed_data_len = len(self.inputs[example_key])
+            self.labels[key] = []
+            for folder in input_folders:
+                all_files = sorted(glob.glob(os.path.join(self.data_path, folder, f"{key}_*.npy")))
+                self.labels[key].extend(all_files)
+        # make sure that the input and label files are the same other than the key
+        for key in self.input_keys:
+            assert self.inputs[key] == [i.replace(self.example_key, key) 
+                                            for i in self.inputs[self.example_key]]
+        for key in self.label_keys:
+            assert self.labels[key] == [i.replace(self.example_key, key) 
+                                            for i in self.inputs[self.example_key]]
+        self.preprocessed_data_len = len(self.inputs[self.example_key])
 
+    @torch.no_grad()
     def norm_and_float_data(self, data, key):
         """Converts data to float."""
         # Everything is in torch.Tensor. Normlize accordingly if uint 8 or 16. 
@@ -198,6 +207,7 @@ class CogPhysLoader(BaseLoader):
             data = data.float()
         return data
 
+    @torch.no_grad()
     @staticmethod
     def diff_normalize_data(data):
         """Calculate discrete difference in video data along the time-axis and nornamize by its standard deviation."""
@@ -208,6 +218,7 @@ class CogPhysLoader(BaseLoader):
         diffnormalized_data[torch.isnan(diffnormalized_data)] = 0
         return diffnormalized_data
 
+    @torch.no_grad()
     @staticmethod
     def diff_normalize_label(label):
         """Calculate discrete difference in labels along the time-axis and normalize by its standard deviation."""
@@ -217,6 +228,7 @@ class CogPhysLoader(BaseLoader):
         diffnormalized_label[torch.isnan(diffnormalized_label)] = 0
         return diffnormalized_label
 
+    @torch.no_grad()
     @staticmethod
     def standardized_data(data):
         """Z-score standardization for video data."""
@@ -225,6 +237,7 @@ class CogPhysLoader(BaseLoader):
         data[torch.isnan(data)] = 0
         return data
 
+    @torch.no_grad()
     @staticmethod
     def standardized_label(label):
         """Z-score standardization for label signal."""
@@ -233,6 +246,7 @@ class CogPhysLoader(BaseLoader):
         label[torch.isnan(label)] = 0
         return label
 
+    @torch.no_grad()
     @staticmethod
     def resample_ppg(input_signal, target_length):
         """Samples a PPG sequence into specific length."""
