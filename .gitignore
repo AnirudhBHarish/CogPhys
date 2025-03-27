@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 *.log
 *.mat
+*.png
 .idea
 preprocess
 preprocessed
