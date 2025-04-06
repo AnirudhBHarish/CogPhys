@@ -326,6 +326,13 @@ _C.MODEL.PHYSNET.FRAME_NUM = 64
 # -----------------------------------------------------------------------------
 # Specific parameters for iBVPNet parameters
 # -----------------------------------------------------------------------------
+_C.MODEL.CONTRASTPHYS = CN()
+_C.MODEL.CONTRASTPHYS.FRAME_NUM = 160
+_C.MODEL.CONTRASTPHYS.S = 2
+_C.MODEL.CONTRASTPHYS.CHANNELS = 3
+# -----------------------------------------------------------------------------
+# Specific parameters for iBVPNet parameters
+# -----------------------------------------------------------------------------
 _C.MODEL.iBVPNet = CN()
 _C.MODEL.iBVPNet.FRAME_NUM = 160
 _C.MODEL.iBVPNet.CHANNELS = 3

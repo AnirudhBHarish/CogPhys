@@ -136,8 +136,8 @@ class CogPhysLoader(BaseLoader):
         label = {}
         # USe torch since operating on GPUs much faster for preprocessing
         for inp_key, lab_key in zip(self.input_keys, self.label_keys):
-            data[inp_key] = torch.Tensor(np.load(data_path[inp_key])).to(self.device)
-            label[lab_key] = torch.Tensor(np.load(label_path[lab_key])).to(self.device)
+            data[inp_key] = torch.Tensor(np.load(data_path[inp_key]).astype(int)).to(self.device)
+            label[lab_key] = torch.Tensor(np.load(label_path[lab_key]).astype(int)).to(self.device)
         # Preprocess the data and label
         data = self.preproc_get_item_data(data)
         label = self.preproc_get_item_label(label)
@@ -146,6 +146,8 @@ class CogPhysLoader(BaseLoader):
             # Add channel if data is 3D
             if data[key].ndim == 3:
                 data[key] = data[key].unsqueeze(-1)
+            if data[key].ndim == 4 and data[key].shape[-1] == 1:
+                data[key] = torch.cat([data[key], data[key], data[key]], dim=-1)
             # Permute the data to the correct format
             if self.data_format == 'NDCHW':
                 data[key] = torch.permute(data[key], (0, 3, 1, 2))
@@ -186,6 +188,13 @@ class CogPhysLoader(BaseLoader):
             for folder in input_folders:
                 all_files = sorted(glob.glob(os.path.join(self.data_path, folder, f"{key}_*.npy")))
                 self.labels[key].extend(all_files)
+        # Exclude the follow if NIR
+        exclude = ["v19_still"]
+        if "nir" in self.input_keys:
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude)]
         # make sure that the input and label files are the same other than the key
         for key in self.input_keys:
             assert self.inputs[key] == [i.replace(self.example_key, key) 
@@ -208,8 +217,7 @@ class CogPhysLoader(BaseLoader):
         return data
 
     @torch.no_grad()
-    @staticmethod
-    def diff_normalize_data(data):
+    def diff_normalize_data(self, data):
         """Calculate discrete difference in video data along the time-axis and nornamize by its standard deviation."""
         n, h, w, c = data.shape
         diffnormalized_data = torch.zeros((n, h, w, c), dtype=torch.float32)
@@ -219,8 +227,7 @@ class CogPhysLoader(BaseLoader):
         return diffnormalized_data
 
     @torch.no_grad()
-    @staticmethod
-    def diff_normalize_label(label):
+    def diff_normalize_label(self, label):
         """Calculate discrete difference in labels along the time-axis and normalize by its standard deviation."""
         diffnormalized_label = torch.zeros(label.shape, dtype=torch.float32)
         diff_label = torch.diff(label, axis=0)
@@ -229,8 +236,7 @@ class CogPhysLoader(BaseLoader):
         return diffnormalized_label
 
     @torch.no_grad()
-    @staticmethod
-    def standardized_data(data):
+    def standardized_data(self, data):
         """Z-score standardization for video data."""
         data = data - torch.mean(data)
         data = data / torch.std(data)
@@ -238,8 +244,7 @@ class CogPhysLoader(BaseLoader):
         return data
 
     @torch.no_grad()
-    @staticmethod
-    def standardized_label(label):
+    def standardized_label(self, label):
         """Z-score standardization for label signal."""
         label = label - torch.mean(label)
         label = label / torch.std(label)
@@ -247,8 +252,7 @@ class CogPhysLoader(BaseLoader):
         return label
 
     @torch.no_grad()
-    @staticmethod
-    def resample_ppg(input_signal, target_length):
+    def resample_ppg(self, input_signal, target_length):
         """Samples a PPG sequence into specific length."""
         return np.interp(
             torch.linspace(
