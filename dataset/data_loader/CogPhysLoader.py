@@ -137,7 +137,7 @@ class CogPhysLoader(BaseLoader):
         # USe torch since operating on GPUs much faster for preprocessing
         for inp_key, lab_key in zip(self.input_keys, self.label_keys):
             data[inp_key] = torch.Tensor(np.load(data_path[inp_key]).astype(int)).to(self.device)
-            label[lab_key] = torch.Tensor(np.load(label_path[lab_key]).astype(int)).to(self.device)
+            label[lab_key] = torch.Tensor(np.load(label_path[lab_key]).astype(float)).to(self.device)
         # Preprocess the data and label
         data = self.preproc_get_item_data(data)
         label = self.preproc_get_item_label(label)

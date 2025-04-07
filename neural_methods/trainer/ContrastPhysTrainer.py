@@ -32,7 +32,8 @@ class ContrastPhysTrainer(BaseTrainer):
         self.min_valid_loss = None
         self.best_epoch = 0
 
-        self.model = ContrastPhys(S=config.MODEL.CONTRASTPHYS.S).to(self.device)
+        self.model = ContrastPhys(S=config.MODEL.CONTRASTPHYS.S, 
+                                  in_ch=config.MODEL.CONTRASTPHYS.CHANNELS).to(self.device)
 
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
@@ -50,6 +51,9 @@ class ContrastPhysTrainer(BaseTrainer):
         """Training routine for model"""
         if data_loader["train"] is None:
             raise ValueError("No data for train")
+
+        # print("Pre-trained")
+        # self.model.load_state_dict(torch.load("pretrained.pth", map_location=self.device))
 
         mean_training_losses = []
         mean_valid_losses = []

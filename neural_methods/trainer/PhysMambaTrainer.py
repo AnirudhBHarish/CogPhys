@@ -4,11 +4,13 @@ from collections import OrderedDict
 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 import random
 from evaluation.metrics import calculate_metrics
-from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson
+from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson, Smooth_Neg_Pearson
+from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
 from neural_methods.model.PhysMamba import PhysMamba
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
@@ -43,11 +45,14 @@ class PhysMambaTrainer(BaseTrainer):
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
             self.criterion_Pearson = Neg_Pearson()
+            # self.criterion_Pearson = Smooth_Neg_Pearson()
+            print(self.criterion_Pearson)
+            self.SNRLoss = SNRLoss_dB_Signals()
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=config.TRAIN.LR, weight_decay = 0.0005)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+            # self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            #     self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
         elif config.TOOLBOX_MODE == "only_test":
             self.criterion_Pearson_test = Neg_Pearson()
             pass
@@ -83,15 +88,41 @@ class PhysMambaTrainer(BaseTrainer):
                 labels = (labels - torch.mean(labels)) / \
                             torch.std(labels)
                 loss = self.criterion_Pearson(pred_ppg, labels)
+                loss += self.SNRLoss(pred_ppg, labels)
 
                 loss.backward()
+
+                plt.figure(figsize=(10, 5))
+                plt.subplot(1, 2, 1)
+                plt.plot(pred_ppg[0].detach().cpu().numpy(), label='rPPG')
+                plt.plot(labels[0].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.subplot(1, 2, 2)
+                plt.plot(pred_ppg[1].detach().cpu().numpy(), label='rPPG')
+                plt.plot(labels[1].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.savefig("rPPG_BVP.png")
+                plt.close()
+
+                # plt.figure(figsize=(10, 5))
+                # plt.subplot(1, 2, 1)
+                # plt.plot(rppg_psd[0].detach().cpu().numpy(), label='rPPG PSD')
+                # plt.plot(bvp_psd[0].detach().cpu().numpy(), label='BVP PSD')
+                # plt.legend()
+                # plt.subplot(1, 2, 2)
+                # plt.plot(rppg_psd[1].detach().cpu().numpy(), label='rPPG PSD')
+                # plt.plot(bvp_psd[1].detach().cpu().numpy(), label='BVP PSD')
+                # plt.legend()
+                # plt.savefig("rPPG_BVP_PSD.png")
+                # plt.close()
+
                 running_loss += loss.item()
                 if idx % 100 == 99:  # print every 100 mini-batches
                     print(
                         f'[{epoch}, {idx + 1:5d}] loss: {running_loss / 100:.3f}')
                     running_loss = 0.0
                 self.optimizer.step()
-                self.scheduler.step()
+                # self.scheduler.step()
                 tbar.set_postfix(loss=loss.item())
             
             self.save_model(epoch)
