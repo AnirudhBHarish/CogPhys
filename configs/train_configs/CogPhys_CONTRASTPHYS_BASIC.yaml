@@ -12,7 +12,7 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "nir_S2_pre"
+    EXP_DATA_NAME: "rgb_S4_smooth_full_window"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -32,7 +32,7 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "nir_S2_pre"
+    EXP_DATA_NAME: "rgb_S4_smooth_full_window"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -54,7 +54,7 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "nir_S2_pre"
+    EXP_DATA_NAME: "rgb_S4_smooth_full_window"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -70,7 +70,7 @@ TEST:
     FILTERING:
       USE_EXCLUSION_LIST: True
       EXCLUSION_LIST: ['s3_T1', 's8_T1', 's9_T1', 's26_T1', 's28_T1', 's30_T1', 's31_T1', 's32_T1']
-DEVICE: cuda:4
+DEVICE: cuda:0
 NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp

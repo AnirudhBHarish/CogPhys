@@ -44,8 +44,8 @@ class PhysMambaTrainer(BaseTrainer):
 
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
-            self.criterion_Pearson = Neg_Pearson()
-            # self.criterion_Pearson = Smooth_Neg_Pearson()
+            # self.criterion_Pearson = Neg_Pearson()
+            self.criterion_Pearson = Smooth_Neg_Pearson()
             print(self.criterion_Pearson)
             self.SNRLoss = SNRLoss_dB_Signals()
             self.optimizer = optim.Adam(

@@ -12,12 +12,12 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "nir_mamba_snr"
+    EXP_DATA_NAME: "rgb_fsam"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -32,12 +32,12 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "nir_mamba_snr"
+    EXP_DATA_NAME: "rgb_fsam"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -54,12 +54,12 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "nir_mamba_snr"
+    EXP_DATA_NAME: "rgb_fsam"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -75,8 +75,19 @@ NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp
 MODEL:
-  DROP_RATE: 0.2
-  NAME: PhysMamba
+  DROP_RATE: 0.1
+  NAME: FactorizePhys
+  FactorizePhys:
+    CHANNELS: 3
+    FRAME_NUM: 300
+    MD_FSAM: True
+    MD_TYPE: "NMF"
+    MD_R: 1
+    MD_S: 1
+    MD_STEPS: 4
+    MD_RESIDUAL: True
+    MD_INFERENCE: True
+    TYPE: "big"
 INFERENCE:
   BATCH_SIZE: 2
   EVALUATION_METHOD: "FFT"        # "FFT" or "peak detection"
