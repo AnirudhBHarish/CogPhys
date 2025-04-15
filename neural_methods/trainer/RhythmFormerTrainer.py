@@ -20,12 +20,12 @@ class RhythmFormerTrainer(BaseTrainer):
         self.model_file_name = config.TRAIN.MODEL_FILE_NAME
         self.batch_size = config.TRAIN.BATCH_SIZE
         self.num_of_gpu = config.NUM_OF_GPU_TRAIN
-        self.chunk_len = config.TRAIN.DATA.PREPROCESS.CHUNK_LENGTH
+        self.chunk_len = config.TRAIN.DATA.COGPHYS.SEQ_LENGTH 
         self.config = config
         self.min_valid_loss = None
         self.best_epoch = 0
         self.diff_flag = 0
-        if config.TRAIN.DATA.PREPROCESS.LABEL_TYPE == "DiffNormalized":
+        if config.TRAIN.DATA.COGPHYS.LABEL_TYPE == "DiffNormalized": #false
             self.diff_flag = 1
         if config.TOOLBOX_MODE == "train_and_test":
             self.model = RhythmFormer().to(self.device)
@@ -66,9 +66,10 @@ class RhythmFormerTrainer(BaseTrainer):
 
                 data = data.to(self.device)
                 labels = labels.to(self.device)
-
+                
                 self.optimizer.zero_grad()
                 pred_ppg = self.model(data)
+                #print('pred shape', pred_ppg.shape)
                 pred_ppg = (pred_ppg-torch.mean(pred_ppg, axis=-1).view(-1, 1))/torch.std(pred_ppg, axis=-1).view(-1, 1)    # normalize
 
                 loss = 0.0

@@ -16,7 +16,7 @@ import math
 import torch
 import torch.optim as optim
 from evaluation.metrics import calculate_metrics
-from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson
+from neural_methods.loss.PhysNetNegPearsonLoss import Smooth_Neg_Pearson
 from neural_methods.loss.PhysFormerLossComputer import TorchLossComputer
 from neural_methods.model.PhysFormer import ViT_ST_ST_Compact3_TDC_gra_sharp
 from neural_methods.trainer.BaseTrainer import BaseTrainer
@@ -47,9 +47,9 @@ class PhysFormerTrainer(BaseTrainer):
         self.best_epoch = 0
 
         if config.TOOLBOX_MODE == "train_and_test":
-            self.chunk_len = config.TRAIN.DATA.PREPROCESS.CHUNK_LENGTH
+            self.chunk_len = config.TRAIN.DATA.COGPHYS.SEQ_LENGTH
             self.model = ViT_ST_ST_Compact3_TDC_gra_sharp(
-                image_size=(self.chunk_len,config.TRAIN.DATA.PREPROCESS.RESIZE.H,config.TRAIN.DATA.PREPROCESS.RESIZE.W), 
+                image_size=(self.chunk_len,config.TRAIN.DATA.COGPHYS.H_SIZE,config.TRAIN.DATA.COGPHYS.W_SIZE), 
                 patches=(self.patch_size,) * 3, dim=self.dim, ff_dim=self.ff_dim, num_heads=self.num_heads, num_layers=self.num_layers, 
                 dropout_rate=self.dropout_rate, theta=self.theta).to(self.device)
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
@@ -58,16 +58,16 @@ class PhysFormerTrainer(BaseTrainer):
             self.criterion_reg = torch.nn.MSELoss()
             self.criterion_L1loss = torch.nn.L1Loss()
             self.criterion_class = torch.nn.CrossEntropyLoss()
-            self.criterion_Pearson = Neg_Pearson()
+            self.criterion_Pearson = Smooth_Neg_Pearson()
             self.optimizer = optim.Adam(self.model.parameters(), lr=config.TRAIN.LR, weight_decay=0.00005)
             # TODO: In both the PhysFormer repo's training example and other implementations of a PhysFormer trainer, 
             # a step_size that doesn't end up changing the LR always seems to be used. This seems to defeat the point
             # of using StepLR in the first place. Consider investigating and using another approach (e.g., OneCycleLR).
             self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=50, gamma=0.5)
         elif config.TOOLBOX_MODE == "only_test":
-            self.chunk_len = config.TEST.DATA.PREPROCESS.CHUNK_LENGTH
+            self.chunk_len = config.TRAIN.DATA.COGPHYS.SEQ_LENGTH
             self.model = ViT_ST_ST_Compact3_TDC_gra_sharp(
-                image_size=(self.chunk_len,config.TRAIN.DATA.PREPROCESS.RESIZE.H,config.TRAIN.DATA.PREPROCESS.RESIZE.W), 
+                image_size=(self.chunk_len,config.TRAIN.DATA.COGPHYS.H_SIZE,config.TRAIN.DATA.COGPHYS.W_SIZE), 
                 patches=(self.patch_size,) * 3, dim=self.dim, ff_dim=self.ff_dim, num_heads=self.num_heads, num_layers=self.num_layers, 
                 dropout_rate=self.dropout_rate, theta=self.theta).to(self.device)
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
@@ -104,6 +104,8 @@ class PhysFormerTrainer(BaseTrainer):
             for idx, batch in enumerate(tbar):
                 hr = torch.tensor([self.get_hr(i) for i in batch[1]]).float().to(self.device)
                 data, label = batch[0].float().to(self.device), batch[1].float().to(self.device)
+                participant_task, chunk_id = batch[2], batch[3]
+                #print(participant_task, chunk_id)
 
                 self.optimizer.zero_grad()
 
@@ -210,7 +212,7 @@ class PhysFormerTrainer(BaseTrainer):
         print("===Testing===")
 
         # Change chunk length to be test chunk length
-        self.chunk_len = self.config.TEST.DATA.PREPROCESS.CHUNK_LENGTH
+        self.chunk_len = self.config.TEST.DATA.COGPHYS.SEQ_LENGTH
 
         predictions = dict()
         labels = dict()

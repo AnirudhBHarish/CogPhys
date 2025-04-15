@@ -35,13 +35,20 @@ def power2db(mag):
 def _calculate_fft_hr(ppg_signal, fs=60, low_pass=0.6, high_pass=3.3):
     """Calculate heart rate based on PPG using Fast Fourier transform (FFT)."""
     ppg_signal = np.expand_dims(ppg_signal, 0)
+    #print('input shape', ppg_signal.shape)
     N = _next_power_of_2(ppg_signal.shape[1])
     f_ppg, pxx_ppg = scipy.signal.periodogram(ppg_signal, fs=fs, nfft=N, detrend=False)
+    #print('psd output', f_ppg.shape, pxx_ppg.shape)
     fmask_ppg = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass))
+    #print('2', fmask_ppg.shape)
     mask_ppg = np.take(f_ppg, fmask_ppg)
+    #print('3', mask_ppg.shape)
     mask_pxx = np.take(pxx_ppg, fmask_ppg)
-    fft_hr = np.take(mask_ppg, np.argmax(mask_pxx, 0))[0] * 60
-    return fft_hr
+    #print('4', mask_pxx.shape)
+    #fft_hr = np.take(mask_ppg, np.argmax(mask_pxx, 0))[0] * 60
+    fft_hr_temp = np.take(mask_ppg, np.argmax(mask_pxx, 0))
+    #print('5', fft_hr_temp.shape)
+    return fft_hr_temp[0] * 60
 
 def _calculate_peak_hr(ppg_signal, fs):
     """Calculate heart rate based on PPG using peak detection."""
