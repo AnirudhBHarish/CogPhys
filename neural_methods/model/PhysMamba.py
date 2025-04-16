@@ -172,12 +172,12 @@ class PhysMamba(nn.Module):
         self.fuse_1 = LateralConnection(fast_channels=32, slow_channels=64)
         self.fuse_2 = LateralConnection(fast_channels=32, slow_channels=64)
 
-        self.drop_1 = nn.Dropout3d(0.25)
-        self.drop_2 = nn.Dropout3d(0.25)
-        self.drop_3 = nn.Dropout3d(0.25)
-        self.drop_4 = nn.Dropout3d(0.25)
-        self.drop_5 = nn.Dropout3d(0.25)
-        self.drop_6 = nn.Dropout3d(0.25)
+        self.drop_1 = nn.Dropout(drop_rate1)
+        self.drop_2 = nn.Dropout(drop_rate1)
+        self.drop_3 = nn.Dropout(drop_rate2)
+        self.drop_4 = nn.Dropout(drop_rate2)
+        self.drop_5 = nn.Dropout(drop_rate2)
+        self.drop_6 = nn.Dropout(drop_rate2)
 
         self.poolspa = nn.AdaptiveAvgPool3d((frames, 1, 1))
 

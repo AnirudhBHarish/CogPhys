@@ -5,11 +5,22 @@ import numpy as np
 import torch.fft
 
 class ContrastLoss(nn.Module):
-    def __init__(self, delta_t, K, Fs, high_pass, low_pass):
+    def __init__(self, delta_t, K, Fs, high_pass, low_pass, dist='mse'):
         super(ContrastLoss, self).__init__()
         self.ST_sampling = ST_sampling(delta_t, K, Fs, high_pass, low_pass) # spatiotemporal sampler
         self.T_sampling = T_sampling(delta_t, K, Fs, high_pass, low_pass) # temporal sampler for GT signals
-        self.distance_func = nn.MSELoss(reduction = 'mean') # mean squared error for comparing two PSDs
+        if dist == 'mse':
+            self.distance_func = nn.MSELoss(reduction = 'mean') # mean squared error for comparing two PSDs
+        elif dist == 'mae':
+            self.distance_func = nn.L1Loss(reduction = 'mean')
+        elif dist == 'cosine':
+            self.distance_func = nn.CosineSimilarity(dim=1, eps=1e-6)
+        elif dist == 'kl':
+            self.distance_func = nn.KLDivLoss("batchmean")
+        elif dist == 'combined':
+            self.distance_func = lambda x, y: nn.KLDivLoss("batchmean")(x, y) + nn.MSELoss(reduction = 'mean')(x, y)
+        else:
+            raise ValueError("Unsupported distance function.")
 
     def compare_samples(self, list_a, list_b, exclude_same=False):
         if exclude_same:

@@ -97,6 +97,8 @@ class CogPhysLoader(BaseLoader):
                     pass
                 elif preproc == 'AddChannel':
                     data[key] = data[key].unsqueeze(0)
+                elif preproc == 'Downsample':
+                    data[key] = data[key][::(self.input_fs[self.input_keys.index(key)]  // self.target_fs)]
                 else:
                     raise ValueError(f'Unsupported Preprocessing Type! Got *{preproc}*')
         return data
@@ -188,13 +190,30 @@ class CogPhysLoader(BaseLoader):
             for folder in input_folders:
                 all_files = sorted(glob.glob(os.path.join(self.data_path, folder, f"{key}_*.npy")))
                 self.labels[key].extend(all_files)
-        # Exclude the follow if NIR
-        exclude = ["v19_still"]
+        # Exclude the follow if NIR (blank frames)
+        exclude_nir = ["v19_still"]
         if "nir" in self.input_keys:
+            print(f"Excluding {exclude_nir} files from the dataset due to corrupted respiration signal")
             for key in self.input_keys:
-                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude)]
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_nir)]
             for key in self.label_keys:
-                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude)]
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_nir)]
+        # Exclude if respiration (corrupted signal)
+        exclude_resp = ["v9_still", "v7_still", "v5_still", "v31_still", "v30_still", 
+                            "v15_still", "v12_still", "v11_still", "v10_still"]
+        if "respiration" in self.label_keys:
+            print(f"Excluding {exclude_resp} files from the dataset due to corrupted respiration signal")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_resp)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_resp)]
+        # if 'thermal_below" in self.input_key, only keep the files with "still" or "rest" in the name
+        if self.name == "train" and ("thermal_below" in self.input_keys or "thermal_above" in self.input_keys):
+            print(f"Keeping only still and rest samples")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if any(ex in i for ex in ["still", "rest"])]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if any(ex in i for ex in ["still", "rest"])]
         # make sure that the input and label files are the same other than the key
         for key in self.input_keys:
             assert self.inputs[key] == [i.replace(self.example_key, key) 
