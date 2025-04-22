@@ -42,12 +42,22 @@ class PhysMambaTrainer(BaseTrainer):
         if self.num_of_gpu > 0:
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
 
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45
+            window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
+
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
-            # self.criterion_Pearson = Neg_Pearson()
-            self.criterion_Pearson = Smooth_Neg_Pearson()
-            print(self.criterion_Pearson)
-            self.SNRLoss = SNRLoss_dB_Signals()
+            self.criterion_Pearson = Smooth_Neg_Pearson(2, window_size)
+            self.SNRLoss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=config.TRAIN.LR, weight_decay = 0.0005)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
@@ -83,10 +93,11 @@ class PhysMambaTrainer(BaseTrainer):
                 self.optimizer.zero_grad()
                 pred_ppg = self.model(data)
 
-                pred_ppg = (pred_ppg-torch.mean(pred_ppg, axis=-1).view(-1, 1))/torch.std(pred_ppg, axis=-1).view(-1, 1)    # normalize
-                
-                labels = (labels - torch.mean(labels)) / \
-                            torch.std(labels)
+                pred_ppg = (pred_ppg - torch.mean(pred_ppg, dim=1, keepdim=True)) \
+                            / torch.std(pred_ppg, dim=1, keepdim=True)  # normalize
+                labels = (labels - torch.mean(labels, dim=1, keepdim=True)) \
+                            / torch.std(labels, dim=1, keepdim=True)  # normalize
+
                 loss = self.criterion_Pearson(pred_ppg, labels)
                 loss += self.SNRLoss(pred_ppg, labels)
 

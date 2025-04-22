@@ -43,6 +43,17 @@ class FactorizePhysTrainer(BaseTrainer):
             self.device = torch.device("cpu")  # if no GPUs set device is CPU
             self.num_of_gpu = 0  # no GPUs used
 
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45
+            window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
+
         frames = self.config.MODEL.FactorizePhys.FRAME_NUM
         in_channels = self.config.MODEL.FactorizePhys.CHANNELS
         model_type = self.config.MODEL.FactorizePhys.TYPE
@@ -79,8 +90,9 @@ class FactorizePhysTrainer(BaseTrainer):
 
         if self.config.TOOLBOX_MODE == "train_and_test" or self.config.TOOLBOX_MODE == "only_train":
             self.num_train_batches = len(data_loader["train"])
-            self.criterion = Smooth_Neg_Pearson()
-            self.snr_loss = SNRLoss_dB_Signals()
+            self.criterion = Smooth_Neg_Pearson(2, window_size)
+            self.snr_loss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=self.config.TRAIN.LR)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
@@ -116,7 +128,6 @@ class FactorizePhysTrainer(BaseTrainer):
                 
                 if len(labels.shape) > 2:
                     labels = labels[..., 0]     # Compatibility wigth multi-signal labelled data
-                labels = (labels - torch.mean(labels)) / torch.std(labels)  # normalize
                 last_frame = torch.unsqueeze(data[:, :, -1, :, :], 2).repeat(1, 1, max(self.num_of_gpu, 1), 1, 1)
                 data = torch.cat((data, last_frame), 2)
 
@@ -132,7 +143,10 @@ class FactorizePhysTrainer(BaseTrainer):
                 else:
                     pred_ppg, vox_embed = self.model(data)
                 
-                pred_ppg = (pred_ppg - torch.mean(pred_ppg)) / torch.std(pred_ppg)  # normalize
+                pred_ppg = (pred_ppg - torch.mean(pred_ppg, dim=1, keepdim=True)) \
+                            / torch.std(pred_ppg, dim=1, keepdim=True)  # normalize
+                labels = (labels - torch.mean(labels, dim=1, keepdim=True)) \
+                            / torch.std(labels, dim=1, keepdim=True)  # normalize
 
                 loss = self.criterion(pred_ppg, labels)
                 loss += self.snr_loss(pred_ppg, labels)

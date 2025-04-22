@@ -35,12 +35,26 @@ class ContrastPhysTrainer(BaseTrainer):
         self.model = ContrastPhys(S=config.MODEL.CONTRASTPHYS.S, 
                                   in_ch=config.MODEL.CONTRASTPHYS.CHANNELS).to(self.device)
 
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45
+            window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
+
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
             self.contrast_loss = ContrastLoss(config.MODEL.CONTRASTPHYS.FRAME_NUM, 1, 
-                                              config.TRAIN.DATA.FS, 40, 250)
-            self.loss_model = Smooth_Neg_Pearson(2)
-            self.snr_loss = SNRLoss_dB_Signals(pulse_band = [40 / 60, 250 / 60])
+                                              config.TRAIN.DATA.FS, self.lower_cutoff, self.upper_cutoff,
+                                              dist='combined')
+            print(self.contrast_loss.distance_func)
+            self.loss_model = Smooth_Neg_Pearson(2, window_size)
+            self.snr_loss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.AdamW(self.model.parameters(), lr=config.TRAIN.LR)
         elif config.TOOLBOX_MODE == "only_test":
             pass
@@ -58,7 +72,7 @@ class ContrastPhysTrainer(BaseTrainer):
         mean_training_losses = []
         mean_valid_losses = []
         lrs = []
-        norm = CalculateNormPSD(self.config.TRAIN.DATA.FS, 40, 250)
+        norm = CalculateNormPSD(self.config.TRAIN.DATA.FS, self.lower_cutoff, self.upper_cutoff)
         for epoch in range(self.max_epoch_num):
             print('')
             print(f"====Training Epoch: {epoch}====")
@@ -71,8 +85,10 @@ class ContrastPhysTrainer(BaseTrainer):
                 model_out = self.model(batch[0].to(torch.float32).to(self.device))
                 rPPG = model_out[:, -1]
                 BVP_label = batch[1].to(torch.float32).to(self.device)
-                rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
-                BVP_label = (BVP_label - torch.mean(BVP_label)) / torch.std(BVP_label)  # normalize
+                rPPG = (rPPG - torch.mean(rPPG, dim=1, keepdim=True)) \
+                            / torch.std(rPPG, dim=1, keepdim=True)  # normalize
+                BVP_label = (BVP_label - torch.mean(BVP_label, dim=1, keepdim=True)) \
+                            / torch.std(BVP_label, dim=1, keepdim=True)  # normalize
                 
                 loss, p_loss, n_loss, p_loss_gt, n_loss_gt = self.contrast_loss(model_out, BVP_label,
                                                                                 torch.ones(2).to(self.device))
