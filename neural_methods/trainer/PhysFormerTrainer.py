@@ -20,6 +20,7 @@ from neural_methods.loss.PhysNetNegPearsonLoss import Smooth_Neg_Pearson
 from neural_methods.loss.PhysFormerLossComputer import TorchLossComputer
 from neural_methods.model.PhysFormer import ViT_ST_ST_Compact3_TDC_gra_sharp
 from neural_methods.trainer.BaseTrainer import BaseTrainer
+from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
 from tqdm import tqdm
 from scipy.signal import welch
 
@@ -59,6 +60,7 @@ class PhysFormerTrainer(BaseTrainer):
             self.criterion_L1loss = torch.nn.L1Loss()
             self.criterion_class = torch.nn.CrossEntropyLoss()
             self.criterion_Pearson = Smooth_Neg_Pearson()
+            self.criterion_SNR = SNRLoss_dB_Signals()
             self.optimizer = optim.Adam(self.model.parameters(), lr=config.TRAIN.LR, weight_decay=0.00005)
             # TODO: In both the PhysFormer repo's training example and other implementations of a PhysFormer trainer, 
             # a step_size that doesn't end up changing the LR always seems to be used. This seems to defeat the point
@@ -111,8 +113,9 @@ class PhysFormerTrainer(BaseTrainer):
 
                 gra_sharp = 2.0
                 rPPG, _, _, _ = self.model(data, gra_sharp)
+                #per batch normalization of rppg signal
                 rPPG = (rPPG-torch.mean(rPPG, axis=-1).view(-1, 1))/torch.std(rPPG, axis=-1).view(-1, 1)    # normalize
-                loss_rPPG = self.criterion_Pearson(rPPG, label)
+                loss_rPPG = self.criterion_Pearson(rPPG, label) + self.criterion_SNR(rPPG, label)
 
                 fre_loss = 0.0
                 kl_loss = 0.0

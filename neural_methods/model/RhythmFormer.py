@@ -349,14 +349,20 @@ class TPT_Block(nn.Module):
         Returns:
           x [N,C,D,H,W]
         """
+        N,C,D,H,W = x.shape
         for i in range(self.layer_n) :
+            #need padding due to integer division
+            if x.shape[2] % 2 != 0:  # D is not divisible by 2
+                last_slice = x[:, :, -1:, :, :]  # shape: [N, C, 1, H, W]
+                x = torch.cat([x, last_slice], dim=2)
             x = self.downsample_layers[i](x)
         for blk in self.blocks:
             x = blk(x)
         for i in range(self.layer_n) :
             x = self.upsample_layers[i](x)
 
-        return x
+        #need to cut the 4 extra dims, note how this causes an incontinuity in the predictions 
+        return x[:, :, :D, :, :]
     
 class RhythmFormer(nn.Module):
 
@@ -423,9 +429,11 @@ class RhythmFormer(nn.Module):
         x = self.patch_embedding(x)    #[N 64 D 8 8]
         #print('3', x.shape)
         for i in range(3):
+            #print('input to stage', i, ':', x.shape)
             x = self.stages[i](x)    #[N 64 D 8 8]
+            #print('output of stage', i, ':', x.shape)
         
-        
+        '''
         # Pad D to be exactly 300
         if x.shape[2] != D:
             #print('originally:', x.shape[2], 'padding this by:', D - x.shape[2] )
@@ -433,6 +441,7 @@ class RhythmFormer(nn.Module):
             last_frame = x[:, :, -1:, :, :]              # shape: [N, C, 1, H, W]
             pad_tensor = last_frame.expand(-1, -1, pad, -1, -1)  # repeat along D
             x = torch.cat([x, pad_tensor], dim=2)
+        '''
 
             
         #print('4', x.shape)

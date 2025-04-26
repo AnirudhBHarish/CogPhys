@@ -9,6 +9,7 @@ from evaluation.metrics import calculate_metrics
 from neural_methods.model.RhythmFormer import RhythmFormer
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from neural_methods.loss.RythmFormerLossComputer import RhythmFormer_Loss
+from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
 
 class RhythmFormerTrainer(BaseTrainer):
 
@@ -32,6 +33,7 @@ class RhythmFormerTrainer(BaseTrainer):
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
             self.num_train_batches = len(data_loader["train"])
             self.criterion = RhythmFormer_Loss()
+            self.criterion_SNR = SNRLoss_dB_Signals()
             self.optimizer = optim.AdamW(
                 self.model.parameters(), lr=config.TRAIN.LR, weight_decay=0)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
@@ -74,7 +76,7 @@ class RhythmFormerTrainer(BaseTrainer):
 
                 loss = 0.0
                 for ib in range(N):
-                    loss = loss + self.criterion(pred_ppg[ib], labels[ib], epoch , self.config.TRAIN.DATA.FS , self.diff_flag)
+                    loss = loss + self.criterion(pred_ppg[ib], labels[ib], epoch , self.config.TRAIN.DATA.FS , self.diff_flag) + self.criterion_SNR(pred_ppg[ib], labels[ib])
                 loss = loss / N
                 loss.backward()
 
