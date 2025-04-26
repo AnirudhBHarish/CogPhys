@@ -136,9 +136,10 @@ class CogPhysLoader(BaseLoader):
         label_path = {key: self.labels[key][index] for key in self.label_keys}
         data = {}
         label = {}
-        # USe torch since operating on GPUs much faster for preprocessing
-        for inp_key, lab_key in zip(self.input_keys, self.label_keys):
+        # Use torch since operating on GPUs much faster for preprocessing
+        for inp_key in self.input_keys:
             data[inp_key] = torch.Tensor(np.load(data_path[inp_key]).astype(int)).to(self.device)
+        for lab_key in self.label_keys:
             label[lab_key] = torch.Tensor(np.load(label_path[lab_key]).astype(float)).to(self.device)
         # Preprocess the data and label
         data = self.preproc_get_item_data(data)
@@ -153,14 +154,17 @@ class CogPhysLoader(BaseLoader):
             # Permute the data to the correct format
             if self.data_format == 'NDCHW':
                 data[key] = torch.permute(data[key], (0, 3, 1, 2))
+                concat_dim = 1
             elif self.data_format == 'NCDHW':
                 data[key] = torch.permute(data[key], (3, 0, 1, 2))
+                concat_dim = 0
             elif self.data_format == 'NDHWC':
                 pass
+                concat_dim = -1
             else:
                 raise ValueError('Unsupported Data Format!')
         if not self.ret_dict:
-            data = torch.cat([data[key].cpu() for key in self.input_keys], dim=-1)
+            data = torch.cat([data[key].cpu() for key in self.input_keys], dim=concat_dim)
             label = torch.cat([label[key].cpu() for key in self.label_keys], dim=-1)
         return data, label, participant_task, chunk_id
 
@@ -193,7 +197,7 @@ class CogPhysLoader(BaseLoader):
         # Exclude the follow if NIR (blank frames)
         exclude_nir = ["v19_still"]
         if "nir" in self.input_keys:
-            print(f"Excluding {exclude_nir} files from the dataset due to corrupted respiration signal")
+            print(f"Excluding {exclude_nir} files from the dataset due to corrupted nir video")
             for key in self.input_keys:
                 self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_nir)]
             for key in self.label_keys:

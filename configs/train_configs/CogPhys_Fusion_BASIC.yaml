@@ -12,14 +12,14 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "ta_cp+_combined_loss"
+    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_dropframe"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left', 'nir']
       LABEL: ['ppg']
-      INPUT_TYPE: [['NormAndFloat']]
+      INPUT_TYPE: [['NormAndFloat'], ['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
       INPUT_FS: [30]
       LABEL_FS: [60]
@@ -32,14 +32,14 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "ta_cp+_combined_loss"
+    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_dropframe"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left', 'nir']
       LABEL: ['ppg']
-      INPUT_TYPE: [['NormAndFloat']]
+      INPUT_TYPE: [['NormAndFloat'], ['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
       INPUT_FS: [30]
       LABEL_FS: [60]
@@ -54,14 +54,14 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "ta_cp+_combined_loss"
+    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_dropframe"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left', 'nir']
       LABEL: ['ppg']
-      INPUT_TYPE: [['NormAndFloat']]
+      INPUT_TYPE: [['NormAndFloat'], ['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
       INPUT_FS: [30]
       LABEL_FS: [60]
@@ -70,14 +70,14 @@ TEST:
     FILTERING:
       USE_EXCLUSION_LIST: True
       EXCLUSION_LIST: ['s3_T1', 's8_T1', 's9_T1', 's26_T1', 's28_T1', 's30_T1', 's31_T1', 's32_T1']
-DEVICE: cuda:1
-NUM_OF_GPU_TRAIN: 1
+DEVICE: cuda
+NUM_OF_GPU_TRAIN: 2
 LOG:
   PATH: runs/exp
 MODEL:
   TYPE: HR
   DROP_RATE: 0.2
-  NAME: ContrastPhys
+  NAME: ContrastFusion
   CONTRASTPHYS:
     FRAME_NUM: 300
     S: 4
