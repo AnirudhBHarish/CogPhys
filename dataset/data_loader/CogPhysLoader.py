@@ -72,6 +72,17 @@ class CogPhysLoader(BaseLoader):
         self.input_fs = config_data.COGPHYS.INPUT_FS
         self.label_fs = config_data.COGPHYS.LABEL_FS
 
+        # Radar specific
+        self.numRx = config_data.COGPHYS.NUMRX
+        self.numTx = config_data.COGPHYS.NUMTX
+        self.numADCSamples = config_data.COGPHYS.NUMADCSAMPLES
+        light_speed_meter_per_sec = config_data.COGPHYS.LIGHT_SPEED_METER_PER_SEC
+        freq_slope_M_hz_per_usec = config_data.COGPHYS.FREQ_SLOPE_M_HZ_PER_USEC
+        adc_sample_rate_Msps = config_data.COGPHYS.ADC_SAMPLE_RATE_MSPS
+        adc_sample_period_usec = 1.0 / adc_sample_rate_Msps * self.numADCSamples
+        band_width = freq_slope_M_hz_per_usec * adc_sample_period_usec * 1e6
+        self.range_resolution = light_speed_meter_per_sec / (2.0 * band_width)
+
         self.load_preprocessed_data()
 
         print('Cached Data Path', self.cached_path, end='\n\n')
@@ -97,6 +108,8 @@ class CogPhysLoader(BaseLoader):
                     pass
                 elif preproc == 'AddChannel':
                     data[key] = data[key].unsqueeze(0)
+                elif preproc == 'Beamform':
+                    data[key] = self.beamform(data[key])
                 elif preproc == 'Downsample':
                     data[key] = data[key][::(self.input_fs[self.input_keys.index(key)]  // self.target_fs)]
                 else:
@@ -161,6 +174,8 @@ class CogPhysLoader(BaseLoader):
             elif self.data_format == 'NDHWC':
                 pass
                 concat_dim = -1
+            elif self.data_format == 'NDC':  # radar
+                pass
             else:
                 raise ValueError('Unsupported Data Format!')
         if not self.ret_dict:
@@ -218,6 +233,13 @@ class CogPhysLoader(BaseLoader):
                 self.inputs[key] = [i for i in self.inputs[key] if any(ex in i for ex in ["still", "rest"])]
             for key in self.label_keys:
                 self.labels[key] = [i for i in self.labels[key] if any(ex in i for ex in ["still", "rest"])]
+        exclude_radar = ["v26_read_rest", "v31_still"]
+        if "radar" in self.input_keys:
+            print(f"Excluding {exclude_radar} files from the dataset due to corrupted radar readings")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_radar)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_radar)]
         # make sure that the input and label files are the same other than the key
         for key in self.input_keys:
             assert self.inputs[key] == [i.replace(self.example_key, key) 
@@ -237,6 +259,17 @@ class CogPhysLoader(BaseLoader):
             data = data.float() / 65535.0
         else:
             data = data.float()
+        return data
+    
+    @torch.no_grad()
+    def beamform(self, data):
+        """Beamform  the radar data."""
+        # For now we implement the beramforming specifcally for 0 degree
+        # For this dataset, particiapnts are a few centimeters away and almost at 0 degrees
+        # data shape in this processed dataset is typically (T, Tx, Rx, 256)
+        assert self.numTx == 2, "Update the beamforming code for more Tx"
+        data = data[:, :2] # The frst 2 Tx help with azimuth beamforming
+        data = data.reshape(data.shape[0], self.numRx*(self.numTx-1), data.shape[3]).mean(axis=1)
         return data
 
     @torch.no_grad()
