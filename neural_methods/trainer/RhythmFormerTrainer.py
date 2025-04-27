@@ -9,6 +9,7 @@ from evaluation.metrics import calculate_metrics
 from neural_methods.model.RhythmFormer import RhythmFormer
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from neural_methods.loss.RythmFormerLossComputer import RhythmFormer_Loss
+from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
 
 class RhythmFormerTrainer(BaseTrainer):
 
@@ -20,18 +21,19 @@ class RhythmFormerTrainer(BaseTrainer):
         self.model_file_name = config.TRAIN.MODEL_FILE_NAME
         self.batch_size = config.TRAIN.BATCH_SIZE
         self.num_of_gpu = config.NUM_OF_GPU_TRAIN
-        self.chunk_len = config.TRAIN.DATA.PREPROCESS.CHUNK_LENGTH
+        self.chunk_len = config.TRAIN.DATA.COGPHYS.SEQ_LENGTH 
         self.config = config
         self.min_valid_loss = None
         self.best_epoch = 0
         self.diff_flag = 0
-        if config.TRAIN.DATA.PREPROCESS.LABEL_TYPE == "DiffNormalized":
+        if config.TRAIN.DATA.COGPHYS.LABEL_TYPE == "DiffNormalized": #false
             self.diff_flag = 1
         if config.TOOLBOX_MODE == "train_and_test":
             self.model = RhythmFormer().to(self.device)
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
             self.num_train_batches = len(data_loader["train"])
             self.criterion = RhythmFormer_Loss()
+            self.criterion_SNR = SNRLoss_dB_Signals()
             self.optimizer = optim.AdamW(
                 self.model.parameters(), lr=config.TRAIN.LR, weight_decay=0)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
@@ -66,14 +68,15 @@ class RhythmFormerTrainer(BaseTrainer):
 
                 data = data.to(self.device)
                 labels = labels.to(self.device)
-
+                
                 self.optimizer.zero_grad()
                 pred_ppg = self.model(data)
+                #print('pred shape', pred_ppg.shape)
                 pred_ppg = (pred_ppg-torch.mean(pred_ppg, axis=-1).view(-1, 1))/torch.std(pred_ppg, axis=-1).view(-1, 1)    # normalize
 
                 loss = 0.0
                 for ib in range(N):
-                    loss = loss + self.criterion(pred_ppg[ib], labels[ib], epoch , self.config.TRAIN.DATA.FS , self.diff_flag)
+                    loss = loss + self.criterion(pred_ppg[ib], labels[ib], epoch , self.config.TRAIN.DATA.FS , self.diff_flag) + self.criterion_SNR(pred_ppg[ib], labels[ib])
                 loss = loss / N
                 loss.backward()
 

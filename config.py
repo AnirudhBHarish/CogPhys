@@ -99,6 +99,8 @@ _C.TRAIN.DATA.COGPHYS.INPUT_FS = []
 _C.TRAIN.DATA.COGPHYS.LABEL_FS = []
 _C.TRAIN.DATA.COGPHYS.SEQ_LENGTH = 300
 _C.TRAIN.DATA.COGPHYS.RET_DICT = False
+_C.TRAIN.DATA.COGPHYS.H_SIZE = 128
+_C.TRAIN.DATA.COGPHYS.W_SIZE = 128
 
 # -----------------------------------------------------------------------------
 # Valid settings
