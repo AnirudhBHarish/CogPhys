@@ -110,6 +110,8 @@ class CogPhysLoader(BaseLoader):
                     data[key] = data[key].unsqueeze(0)
                 elif preproc == 'Beamform':
                     data[key] = self.beamform(data[key])
+                elif preproc == 'ConstructRangeMatrix':
+                    data[key] = self.construct_range_matrix(data[key])
                 elif preproc == 'Downsample':
                     data[key] = data[key][::(self.input_fs[self.input_keys.index(key)]  // self.target_fs)]
                 else:
@@ -159,23 +161,26 @@ class CogPhysLoader(BaseLoader):
         label = self.preproc_get_item_label(label)
         # Return the data and label
         for key in self.input_keys:
-            # Add channel if data is 3D
-            if data[key].ndim == 3:
-                data[key] = data[key].unsqueeze(-1)
-            if data[key].ndim == 4 and data[key].shape[-1] == 1:
-                data[key] = torch.cat([data[key], data[key], data[key]], dim=-1)
-            # Permute the data to the correct format
-            if self.data_format == 'NDCHW':
-                data[key] = torch.permute(data[key], (0, 3, 1, 2))
-                concat_dim = 1
-            elif self.data_format == 'NCDHW':
-                data[key] = torch.permute(data[key], (3, 0, 1, 2))
-                concat_dim = 0
-            elif self.data_format == 'NDHWC':
-                pass
+            if key in ['rgb_left', 'rgb_right', 'nir', 'thermal_above', 'thermal_below']:
+                # Add channel if data is 3D
+                if data[key].ndim == 3:
+                    data[key] = data[key].unsqueeze(-1)
+                if data[key].ndim == 4 and data[key].shape[-1] == 1:
+                    data[key] = torch.cat([data[key], data[key], data[key]], dim=-1)
+                # Permute the data to the correct format
+                if self.data_format == 'NDCHW':
+                    data[key] = torch.permute(data[key], (0, 3, 1, 2))
+                    concat_dim = 1
+                elif self.data_format == 'NCDHW':
+                    data[key] = torch.permute(data[key], (3, 0, 1, 2))
+                    concat_dim = 0
+                elif self.data_format == 'NDHWC':
+                    pass
+                    concat_dim = -1
+                else:
+                    raise ValueError('Unsupported Data Format!')
+            elif key in ['radar']:
                 concat_dim = -1
-            elif self.data_format == 'NDC':  # radar
-                pass
             else:
                 raise ValueError('Unsupported Data Format!')
         if not self.ret_dict:
@@ -227,7 +232,8 @@ class CogPhysLoader(BaseLoader):
             for key in self.label_keys:
                 self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_resp)]
         # if 'thermal_below" in self.input_key, only keep the files with "still" or "rest" in the name
-        if self.name == "train" and ("thermal_below" in self.input_keys or "thermal_above" in self.input_keys):
+        if self.name == "train" and ("thermal_below" in self.input_keys or "thermal_above" in self.input_keys or 
+                                     "radar" in self.input_keys):
             print(f"Keeping only still and rest samples")
             for key in self.input_keys:
                 self.inputs[key] = [i for i in self.inputs[key] if any(ex in i for ex in ["still", "rest"])]
@@ -267,10 +273,18 @@ class CogPhysLoader(BaseLoader):
         # For now we implement the beramforming specifcally for 0 degree
         # For this dataset, particiapnts are a few centimeters away and almost at 0 degrees
         # data shape in this processed dataset is typically (T, Tx, Rx, 256)
-        assert self.numTx == 2, "Update the beamforming code for more Tx"
-        data = data[:, :2] # The frst 2 Tx help with azimuth beamforming
+        data = data[:, :2] # The first 2 Tx help with azimuth beamforming
         data = data.reshape(data.shape[0], self.numRx*(self.numTx-1), data.shape[3]).mean(axis=1)
         return data
+    
+    @torch.no_grad()
+    def construct_range_matrix(self, data):
+        """Contruct Range Matrix."""
+        fft_data = torch.fft.fft(data, dim=-1)
+        bkg_sub = fft_data # implment your own background subtraction if needed
+        bkg_sub = bkg_sub - torch.mean(bkg_sub, axis=0, keepdims=True)
+        range_matrix = torch.stack([bkg_sub.real, bkg_sub.imag], dim=-1).permute(0, 2, 1)
+        return range_matrix
 
     @torch.no_grad()
     def diff_normalize_data(self, data):

@@ -12,7 +12,7 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop_50"
+    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -32,7 +32,7 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop_50"
+    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -54,7 +54,7 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop_50"
+    EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'

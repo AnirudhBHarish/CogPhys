@@ -346,7 +346,20 @@ _C.MODEL.PHYSNET = CN()
 _C.MODEL.PHYSNET.FRAME_NUM = 64
 
 # -----------------------------------------------------------------------------
-# Specific parameters for iBVPNet parameters
+# Specific parameters for RADARNET parameters
+# -----------------------------------------------------------------------------
+_C.MODEL.RADARNET = CN()
+_C.MODEL.RADARNET.CHANNELS = 20
+_C.MODEL.RADARNET.FRAME_NUM = 300
+# -----------------------------------------------------------------------------
+# Specific parameters for ContrastFusion parameters
+# -----------------------------------------------------------------------------
+_C.MODEL.CONTRASTFUSION = CN()
+_C.MODEL.CONTRASTFUSION.FRAME_NUM = 160
+_C.MODEL.CONTRASTFUSION.S = 2
+_C.MODEL.CONTRASTFUSION.CHANNELS = 3
+# -----------------------------------------------------------------------------
+# Specific parameters for ContrastPhys parameters
 # -----------------------------------------------------------------------------
 _C.MODEL.CONTRASTPHYS = CN()
 _C.MODEL.CONTRASTPHYS.FRAME_NUM = 160

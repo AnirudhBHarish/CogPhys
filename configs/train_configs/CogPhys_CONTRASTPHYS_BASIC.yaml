@@ -17,7 +17,7 @@ TRAIN:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -37,7 +37,7 @@ VALID:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -59,7 +59,7 @@ TEST:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['nir']
+      INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]

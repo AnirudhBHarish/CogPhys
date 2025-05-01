@@ -32,10 +32,11 @@ class ContrastFusionTrainer(BaseTrainer):
         self.min_valid_loss = None
         self.best_epoch = 0
 
-        self.model = ContrastFusion(S=config.MODEL.CONTRASTPHYS.S, 
-                                  in_ch=config.MODEL.CONTRASTPHYS.CHANNELS).to(self.device)        
-        # print("Pre-trained")
-        # self.model.load_state_dict(torch.load("pretrained.pth", map_location=self.device))
+        self.model = ContrastFusion(S=config.MODEL.CONTRASTFUSION.S, 
+                                  in_ch=config.MODEL.CONTRASTFUSION.CHANNELS).to(self.device)        
+        # pretrained_path = "pretrained.pth"
+        # print("Pre-trained", pretrained_path)
+        # self.model.load_state_dict(torch.load(pretrained_path, map_location=self.device))
         if self.num_of_gpu > 0:
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))        
 
@@ -52,7 +53,7 @@ class ContrastFusionTrainer(BaseTrainer):
 
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
-            self.contrast_loss = ContrastLoss(config.MODEL.CONTRASTPHYS.FRAME_NUM, 1, 
+            self.contrast_loss = ContrastLoss(config.MODEL.CONTRASTFUSION.FRAME_NUM, 1, 
                                               config.TRAIN.DATA.FS, self.lower_cutoff, self.upper_cutoff,
                                               dist='combined')
             print(self.contrast_loss.distance_func)
