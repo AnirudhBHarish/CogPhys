@@ -34,9 +34,12 @@ class ContrastFusionTrainer(BaseTrainer):
 
         self.model = ContrastFusion(S=config.MODEL.CONTRASTFUSION.S, 
                                   in_ch=config.MODEL.CONTRASTFUSION.CHANNELS).to(self.device)        
-        # pretrained_path = "pretrained.pth"
-        # print("Pre-trained", pretrained_path)
-        # self.model.load_state_dict(torch.load(pretrained_path, map_location=self.device))
+        if config.MODEL.PRETRAINED is not None:
+            self.model.load_state_dict(torch.load(config.MODEL.PRETRAINED, 
+                                                  map_location=self.device))
+            print("Pre-trained:", config.MODEL.PRETRAINED)
+        else:
+            print("No pre-trained model loaded!")
         if self.num_of_gpu > 0:
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))        
 

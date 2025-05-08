@@ -335,6 +335,8 @@ _C.MODEL = CN()
 _C.MODEL.NAME = ''
 # Type
 _C.MODEL.TYPE = 'HR'
+# Pretrained
+_C.MODEL.PRETRAINED = None
 # Checkpoint to resume, could be overwritten by command line argument
 _C.MODEL.RESUME = ''
 # Dropout rate

@@ -34,6 +34,12 @@ class ContrastPhysTrainer(BaseTrainer):
 
         self.model = ContrastPhys(S=config.MODEL.CONTRASTPHYS.S, 
                                   in_ch=config.MODEL.CONTRASTPHYS.CHANNELS).to(self.device)
+        if config.MODEL.PRETRAINED is not None:
+            self.model.load_state_dict(torch.load(config.MODEL.PRETRAINED, 
+                                                  map_location=self.device))
+            print("Pre-trained:", config.MODEL.PRETRAINED)
+        else:
+            print("No pre-trained model loaded!")
 
         if config.MODEL.TYPE == "RR":
             self.lower_cutoff = 5
@@ -65,9 +71,6 @@ class ContrastPhysTrainer(BaseTrainer):
         """Training routine for model"""
         if data_loader["train"] is None:
             raise ValueError("No data for train")
-
-        # print("Pre-trained")
-        # self.model.load_state_dict(torch.load("pretrained.pth", map_location=self.device))
 
         mean_training_losses = []
         mean_valid_losses = []

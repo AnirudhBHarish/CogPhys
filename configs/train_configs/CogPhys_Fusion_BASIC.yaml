@@ -21,7 +21,7 @@ TRAIN:
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat'], ['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
-      INPUT_FS: [30]
+      INPUT_FS: [30, 30]
       LABEL_FS: [60]
       SEQ_LENGTH: 300
       RET_DICT: False
@@ -41,7 +41,7 @@ VALID:
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat'], ['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
-      INPUT_FS: [30]
+      INPUT_FS: [30, 30]
       LABEL_FS: [60]
       SEQ_LENGTH: 300
       RET_DICT: False
@@ -63,7 +63,7 @@ TEST:
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat'], ['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
-      INPUT_FS: [30]
+      INPUT_FS: [30, 30]
       LABEL_FS: [60]
       SEQ_LENGTH: 300
       RET_DICT: False
@@ -75,6 +75,7 @@ NUM_OF_GPU_TRAIN: 2
 LOG:
   PATH: runs/exp
 MODEL:
+  PRETRAINED: "pretrained_nir_pre.pth"
   TYPE: HR
   DROP_RATE: 0.2
   NAME: ContrastFusion
