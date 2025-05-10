@@ -2,69 +2,69 @@ BASE: ['']
 TOOLBOX_MODE: "train_and_test" # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 2
-  EPOCHS: 100
+  EPOCHS: 50
   LR: 1e-5
   MODEL_FILE_NAME: CogPhys_rPPG_ch3_PhysNet
   PLOT_LOSSES_AND_LR: True
   DATA:
-    FS: 15
+    FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "ta_mamba"
+    EXP_DATA_NAME: "rgb_mamba"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['thermal_above']
-      LABEL: ['respiration']
-      INPUT_TYPE: [['Downsample', 'NormAndFloat']]
+      INPUT: ['rgb_left']
+      LABEL: ['ppg']
+      INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
-      INPUT_FS: [60]
-      LABEL_FS: [30]
+      INPUT_FS: [30]
+      LABEL_FS: [60]
       SEQ_LENGTH: 300
       RET_DICT: False
 VALID:
   DATA:
-    FS: 15
+    FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "ta_mamba"
+    EXP_DATA_NAME: "rgb_mamba"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['thermal_above']
-      LABEL: ['respiration']
-      INPUT_TYPE: [['Downsample', 'NormAndFloat']]
+      INPUT: ['rgb_left']
+      LABEL: ['ppg']
+      INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
-      INPUT_FS: [60]
-      LABEL_FS: [30]
+      INPUT_FS: [30]
+      LABEL_FS: [60]
       SEQ_LENGTH: 300
       RET_DICT: False
 TEST:
   METRICS: ['MAE', 'RMSE', 'MAPE', 'Pearson', 'SNR', 'BA']
   USE_LAST_EPOCH: False                   # to use provided validation dataset to find the best epoch, should be false
   DATA:
-    FS: 15
+    FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "ta_mamba"
+    EXP_DATA_NAME: "nir_mamba_pre"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
-      INPUT: ['thermal_above']
-      LABEL: ['respiration']
-      INPUT_TYPE: [['Downsample', 'NormAndFloat']]
+      INPUT: ['rgb_left']
+      LABEL: ['ppg']
+      INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
-      INPUT_FS: [60]
-      LABEL_FS: [30]
+      INPUT_FS: [30]
+      LABEL_FS: [60]
       SEQ_LENGTH: 300
       RET_DICT: False
     FILTERING:
@@ -75,7 +75,8 @@ NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp
 MODEL:
-  TYPE: RR
+  PRETRAINED: "pretrained_mamaba_rgb.pth"
+  TYPE: HR
   DROP_RATE: 0.2
   NAME: PhysMamba
 INFERENCE:

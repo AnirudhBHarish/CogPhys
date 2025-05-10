@@ -2,7 +2,7 @@ BASE: ['']
 TOOLBOX_MODE: "train_and_test" # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 2
-  EPOCHS: 100
+  EPOCHS: 50
   LR: 1e-5
   MODEL_FILE_NAME: CogPhys_rPPG_ch3_PhysNet
   PLOT_LOSSES_AND_LR: True

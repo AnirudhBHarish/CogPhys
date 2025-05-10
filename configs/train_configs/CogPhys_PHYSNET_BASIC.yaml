@@ -1,9 +1,9 @@
 BASE: ['']
 TOOLBOX_MODE: "train_and_test" # "train_and_test"  or "only_test"
 TRAIN:
-  BATCH_SIZE: 4
-  EPOCHS: 30
-  LR: 9e-3
+  BATCH_SIZE: 2
+  EPOCHS: 50
+  LR: 1e-5
   MODEL_FILE_NAME: CogPhys_rPPG_ch3_PhysNet
   PLOT_LOSSES_AND_LR: True
   DATA:
@@ -12,7 +12,7 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "Demo"
+    EXP_DATA_NAME: "rgb_physnet"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -20,7 +20,7 @@ TRAIN:
       INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
-      LABEL_TYPE: [['Downsample']]
+      LABEL_TYPE: [['Downsample', "Standardize"]]
       INPUT_FS: [30]
       LABEL_FS: [60]
       SEQ_LENGTH: 300
@@ -32,7 +32,7 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "Demo"
+    EXP_DATA_NAME: "rgb_physnet"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -40,7 +40,7 @@ VALID:
       INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
-      LABEL_TYPE: [['Downsample']]
+      LABEL_TYPE: [['Downsample', "Standardize"]]
       INPUT_FS: [30]
       LABEL_FS: [60]
       SEQ_LENGTH: 300
@@ -54,7 +54,7 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "Demo"
+    EXP_DATA_NAME: "rgb_physnet"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -62,7 +62,7 @@ TEST:
       INPUT: ['rgb_left']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
-      LABEL_TYPE: [['Downsample']]
+      LABEL_TYPE: [['Downsample', "Standardize"]]
       INPUT_FS: [30]
       LABEL_FS: [60]
       SEQ_LENGTH: 300
@@ -70,11 +70,12 @@ TEST:
     FILTERING:
       USE_EXCLUSION_LIST: True
       EXCLUSION_LIST: ['s3_T1', 's8_T1', 's9_T1', 's26_T1', 's28_T1', 's30_T1', 's31_T1', 's32_T1']
-DEVICE: cuda:5
+DEVICE: cuda:0
 NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp
 MODEL:
+  TYPE: HR
   DROP_RATE: 0.2
   NAME: Physnet
   PHYSNET:

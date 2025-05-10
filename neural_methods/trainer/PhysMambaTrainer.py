@@ -41,6 +41,12 @@ class PhysMambaTrainer(BaseTrainer):
         self.model = PhysMamba().to(self.device)  # [3, T, 128,128]
         if self.num_of_gpu > 0:
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
+        if config.MODEL.PRETRAINED is not None:
+            self.model.load_state_dict(torch.load(config.MODEL.PRETRAINED, 
+                                                  map_location=self.device))
+            print("Pre-trained:", config.MODEL.PRETRAINED)
+        else:
+            print("No pre-trained model loaded!")
 
         if config.MODEL.TYPE == "RR":
             self.lower_cutoff = 5

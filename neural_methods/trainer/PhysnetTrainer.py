@@ -7,6 +7,7 @@ import torch
 import torch.optim as optim
 from evaluation.metrics import calculate_metrics
 from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson
+from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
 from neural_methods.model.PhysNet import PhysNet_padding_Encoder_Decoder_MAX
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
@@ -32,14 +33,27 @@ class PhysnetTrainer(BaseTrainer):
         self.model = PhysNet_padding_Encoder_Decoder_MAX(
             frames=config.MODEL.PHYSNET.FRAME_NUM).to(self.device)  # [3, T, 128,128]
 
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45
+            window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
+
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
             self.loss_model = Neg_Pearson()
+            self.snr_loss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=config.TRAIN.LR)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+            # self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            #     self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
         elif config.TOOLBOX_MODE == "only_test":
             pass
         else:
@@ -70,6 +84,7 @@ class PhysnetTrainer(BaseTrainer):
                 BVP_label = (BVP_label - torch.mean(BVP_label)) / \
                             torch.std(BVP_label)  # normalize
                 loss = self.loss_model(rPPG, BVP_label)
+                loss += self.snr_loss(rPPG, BVP_label)
                 loss.backward()
                 running_loss += loss.item()
                 if idx % 100 == 99:  # print every 100 mini-batches
@@ -79,10 +94,11 @@ class PhysnetTrainer(BaseTrainer):
                 train_loss.append(loss.item())
 
                 # Append the current learning rate to the list
-                lrs.append(self.scheduler.get_last_lr())
+                # lrs.append(self.scheduler.get_last_lr())
+                lrs.append(0)
 
                 self.optimizer.step()
-                self.scheduler.step()
+                # self.scheduler.step()
                 self.optimizer.zero_grad()
                 tbar.set_postfix(loss=loss.item())
 
