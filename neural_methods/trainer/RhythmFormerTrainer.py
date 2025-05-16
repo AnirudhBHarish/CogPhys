@@ -28,12 +28,25 @@ class RhythmFormerTrainer(BaseTrainer):
         self.diff_flag = 0
         if config.TRAIN.DATA.COGPHYS.LABEL_TYPE == "DiffNormalized": #false
             self.diff_flag = 1
+            
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45
+            self.window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            self.window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
+            
         if config.TOOLBOX_MODE == "train_and_test":
             self.model = RhythmFormer().to(self.device)
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
             self.num_train_batches = len(data_loader["train"])
-            self.criterion = RhythmFormer_Loss()
-            self.criterion_SNR = SNRLoss_dB_Signals()
+            self.criterion = RhythmFormer_Loss(self.window_size, self.lower_cutoff, self.upper_cutoff)
+            self.criterion_SNR = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.AdamW(
                 self.model.parameters(), lr=config.TRAIN.LR, weight_decay=0)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
@@ -92,6 +105,7 @@ class RhythmFormerTrainer(BaseTrainer):
                     running_loss = 0.0
                 train_loss.append(loss.item())
                 tbar.set_postfix(loss=loss.item())
+                
 
             # Append the mean training loss for the epoch
             mean_training_losses.append(np.mean(train_loss))

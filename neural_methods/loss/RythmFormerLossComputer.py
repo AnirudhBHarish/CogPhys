@@ -78,15 +78,18 @@ class Smooth_Neg_Pearson(nn.Module):
         return loss
 
 class RhythmFormer_Loss(nn.Module): 
-    def __init__(self):
+    def __init__(self, window_size, lower, upper):
         super(RhythmFormer_Loss,self).__init__()
-        self.criterion_Pearson = Smooth_Neg_Pearson()
+        self.window_size = window_size
+        self.lower_cutoff = lower
+        self.upper_cutoff = upper
+        self.criterion_Pearson = Smooth_Neg_Pearson(2, self.window_size)
     def forward(self, pred_ppg, labels , epoch , FS , diff_flag):   
         loss_time = self.criterion_Pearson(pred_ppg.view(1,-1) , labels.view(1,-1))
         #print('1', loss_time)    
-        loss_CE , loss_distribution_kl = TorchLossComputer.Frequency_loss(pred_ppg.squeeze(-1),  labels.squeeze(-1), diff_flag=diff_flag, Fs=FS, std=3.0)
+        loss_CE , loss_distribution_kl = TorchLossComputer.Frequency_loss(pred_ppg.squeeze(-1), labels.squeeze(-1), self.lower_cutoff, self.upper_cutoff, diff_flag=diff_flag, Fs=FS, std=3.0)
         #print('2', loss_CE, loss_distribution_kl)
-        loss_hr = TorchLossComputer.HR_loss(pred_ppg.squeeze(-1),  labels.squeeze(-1), diff_flag=diff_flag, Fs=FS, std=3.0)
+        loss_hr = TorchLossComputer.HR_loss(pred_ppg.squeeze(-1),  labels.squeeze(-1), self.lower_cutoff, self.upper_cutoff, diff_flag=diff_flag, Fs=FS, std=3.0)
         #print( 'hr_loss output', loss_hr)
         if torch.isnan(loss_time) : 
            loss_time = 0
@@ -129,11 +132,11 @@ class TorchLossComputer(object):
 
 
     @staticmethod
-    def cross_entropy_power_spectrum_loss(inputs, target, Fs):
+    def cross_entropy_power_spectrum_loss(inputs, target, Fs, lower, upper):
         inputs = inputs.view(1, -1)
         target = target.view(1, -1)
-        bpm_range = torch.arange(40, 180, dtype=torch.float).cuda()
-        #bpm_range = torch.arange(40, 260, dtype=torch.float).cuda()
+        bpm_range = torch.arange(lower, upper, dtype=torch.float).cuda()
+
 
         complex_absolute = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
 
@@ -146,11 +149,10 @@ class TorchLossComputer(object):
         return F.cross_entropy(complex_absolute, target.view((1)).type(torch.long)),  torch.abs(target[0] - whole_max_idx)
 
     @staticmethod
-    def cross_entropy_power_spectrum_focal_loss(inputs, target, Fs, gamma):
+    def cross_entropy_power_spectrum_focal_loss(inputs, target, Fs, gamma, lower, upper):
         inputs = inputs.view(1, -1)
         target = target.view(1, -1)
-        bpm_range = torch.arange(40, 180, dtype=torch.float).cuda()
-        #bpm_range = torch.arange(40, 260, dtype=torch.float).cuda()
+        bpm_range = torch.arange(lower, upper, dtype=torch.float).cuda()
 
         complex_absolute = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
 
@@ -165,11 +167,9 @@ class TorchLossComputer(object):
 
 
     @staticmethod
-    def cross_entropy_power_spectrum_forward_pred(inputs, Fs):
+    def cross_entropy_power_spectrum_forward_pred(inputs, Fs, lower, upper):
         inputs = inputs.view(1, -1)
-        bpm_range = torch.arange(40, 190, dtype=torch.float).cuda()
-        #bpm_range = torch.arange(40, 180, dtype=torch.float).cuda()
-        #bpm_range = torch.arange(40, 260, dtype=torch.float).cuda()
+        bpm_range = torch.arange(lower, upper, dtype=torch.float).cuda()
 
         complex_absolute = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
 
@@ -179,39 +179,45 @@ class TorchLossComputer(object):
         return whole_max_idx
 
     @staticmethod
-    def Frequency_loss(inputs, target, diff_flag , Fs, std):
-        hr_gt, pred_hr_peak, SNR, macc = calculate_metric_per_video(inputs.detach().cpu(), target.detach().cpu(), diff_flag = diff_flag, fs=Fs, hr_method='FFT')
+    def Frequency_loss(inputs, target, lower, upper, diff_flag, Fs, std):
+        hr_gt, pred_hr_peak, SNR, macc = calculate_metric_per_video(inputs.detach().cpu(), target.detach().cpu(), lower, upper, fs=Fs, diff_flag = diff_flag, hr_method='FFT')
          
+        #print('hr gt', hr_gt)
+        
         inputs = inputs.view(1, -1)
         target = target.view(1, -1)
-        bpm_range = torch.arange(36, 198, dtype=torch.float).to(torch.device('cuda'))
+        bpm_range = torch.arange(lower, upper+1, dtype=torch.float).to(torch.device('cuda'))
         ca = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
         sa = ca/torch.sum(ca)
-
-        target_distribution = [normal_sampling(int(hr_gt), i, std) for i in range(36, 198)]
+        
+        if hr_gt < lower or hr_gt > upper:
+            hr_gt = np.clip(hr_gt, lower, upper)
+            print('clipped fft calculated gt')
+        target_distribution = [normal_sampling(int(hr_gt), i, std) for i in range(lower, upper+1)]
         target_distribution = [i if i > 1e-15 else 1e-15 for i in target_distribution]
         target_distribution = torch.Tensor(target_distribution).to(torch.device('cuda'))
 
-        hr_gt = torch.tensor(hr_gt-36).view(1).type(torch.long).to(torch.device('cuda'))
+        hr_gt = torch.tensor(hr_gt-lower).view(1).type(torch.long).to(torch.device('cuda'))
     
         return F.cross_entropy(ca, hr_gt) , kl_loss(sa , target_distribution)
 
     @staticmethod
-    def HR_loss(inputs, target,  diff_flag , Fs, std):
-        psd_gt, psd_pred, SNR, macc = calculate_metric_per_video(inputs.detach().cpu(), target.detach().cpu(), diff_flag = diff_flag, fs=Fs, hr_method='Peak')
+    def HR_loss(inputs, target,  lower, upper, diff_flag , Fs, std):
+        psd_gt, psd_pred, SNR, macc = calculate_metric_per_video(inputs.detach().cpu(), target.detach().cpu(), lower, upper, diff_flag = diff_flag, fs=Fs, hr_method='Peak')
+        #print('psd gt', psd_gt)
         
-        if psd_pred < 36 or psd_pred > 198:
-            psd_pred = np.clip(psd_pred, 36, 198)
-            print('clipped pred')
-        pred_distribution = [normal_sampling(psd_pred, i, std) for i in range(36,198)]
+        if psd_pred < lower or psd_pred > upper:
+            psd_pred = np.clip(psd_pred, lower, upper)
+            print('clipped peak calculated pred')
+        pred_distribution = [normal_sampling(psd_pred, i, std) for i in range(lower,upper)]
         pred_distribution = [i if i > 1e-15 else 1e-15 for i in pred_distribution]
         #print(pred_distribution)
         pred_distribution = torch.Tensor(pred_distribution).to(torch.device('cuda'))
         
-        if psd_gt < 36 or psd_gt > 198:
-            psd_gt = np.clip(psd_gt, 36, 198)
-            print('clipped gt')
-        target_distribution = [normal_sampling(psd_gt, i, std) for i in range(36,198)]
+        if psd_gt < lower or psd_gt > upper:
+            psd_gt = np.clip(psd_gt, lower, upper)
+            print('clipped peak calculated gt')
+        target_distribution = [normal_sampling(psd_gt, i, std) for i in range(lower,upper)]
         target_distribution = [i if i > 1e-15 else 1e-15 for i in target_distribution]
         #print(target_distribution)
         target_distribution = torch.Tensor(target_distribution).to(torch.device('cuda'))
