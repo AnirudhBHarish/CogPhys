@@ -12,7 +12,7 @@ from neural_methods import trainer
 from unsupervised_methods.unsupervised_predictor import unsupervised_predict
 from torch.utils.data import DataLoader
 
-RANDOM_SEED = 100
+RANDOM_SEED = 42
 torch.manual_seed(RANDOM_SEED)
 torch.cuda.manual_seed(RANDOM_SEED)
 np.random.seed(RANDOM_SEED)
@@ -83,6 +83,14 @@ def train_and_test(config, data_loader_dict):
         model_trainer = trainer.PhysMambaTrainer.PhysMambaTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == 'RhythmFormer':
         model_trainer = trainer.RhythmFormerTrainer.RhythmFormerTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'ContrastPhys':
+        model_trainer = trainer.ContrastPhysTrainer.ContrastPhysTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'ContrastFusion':
+        model_trainer = trainer.ContrastFusionTrainer.ContrastFusionTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'RadarNet':
+        model_trainer = trainer.RadarNetTrainer.RadarNetTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'WaveformFusion':
+        model_trainer = trainer.WaveformFusionTrainer.WaveformFusionTrainer(config, data_loader_dict)
     else:
         raise ValueError('Your Model is Not Supported  Yet!')
     model_trainer.train(data_loader_dict)
@@ -111,6 +119,14 @@ def test(config, data_loader_dict):
         model_trainer = trainer.PhysMambaTrainer.PhysMambaTrainer(config, data_loader_dict)
     elif config.MODEL.NAME == 'RhythmFormer':
         model_trainer = trainer.RhythmFormerTrainer.RhythmFormerTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'ContrastPhys':
+        model_trainer = trainer.ContrastPhysTrainer.ContrastPhysTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'ContrastFusion':
+        model_trainer = trainer.ContrastFusionTrainer.ContrastFusionTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'RadarNet':
+        model_trainer = trainer.RadarNetTrainer.RadarNetTrainer(config, data_loader_dict)
+    elif config.MODEL.NAME == 'WaveformFusion':
+        model_trainer = trainer.WaveformFusionTrainer.WaveformFusionTrainer(config, data_loader_dict)
     else:
         raise ValueError('Your Model is Not Supported  Yet!')
     model_trainer.test(data_loader_dict)
@@ -170,6 +186,8 @@ if __name__ == "__main__":
             train_loader = data_loader.UBFCPHYSLoader.UBFCPHYSLoader
         elif config.TRAIN.DATA.DATASET == "iBVP":
             train_loader = data_loader.iBVPLoader.iBVPLoader
+        elif config.TRAIN.DATA.DATASET == "CogPhys":
+            train_loader = data_loader.CogPhysLoader.CogPhysLoader
         else:
             raise ValueError("Unsupported dataset! Currently supporting UBFC-rPPG, PURE, MMPD, \
                              SCAMPS, BP4D+ (Normal and BigSmall preprocessing), UBFC-PHYS and iBVP.")
@@ -185,7 +203,7 @@ if __name__ == "__main__":
                 device=config.DEVICE)
             data_loader_dict['train'] = DataLoader(
                 dataset=train_data_loader,
-                num_workers=16,
+                num_workers=2,
                 batch_size=config.TRAIN.BATCH_SIZE,
                 shuffle=True,
                 worker_init_fn=seed_worker,
@@ -211,6 +229,8 @@ if __name__ == "__main__":
             valid_loader = data_loader.UBFCPHYSLoader.UBFCPHYSLoader
         elif config.VALID.DATA.DATASET == "iBVP":
             valid_loader = data_loader.iBVPLoader.iBVPLoader
+        elif config.VALID.DATA.DATASET == "CogPhys":
+            valid_loader = data_loader.CogPhysLoader.CogPhysLoader
         elif config.VALID.DATA.DATASET is None and not config.TEST.USE_LAST_EPOCH:
             raise ValueError("Validation dataset not specified despite USE_LAST_EPOCH set to False!")
         else:
@@ -227,7 +247,7 @@ if __name__ == "__main__":
                 device=config.DEVICE)
             data_loader_dict["valid"] = DataLoader(
                 dataset=valid_data,
-                num_workers=16,
+                num_workers=2,
                 batch_size=config.TRAIN.BATCH_SIZE,  # batch size for val is the same as train
                 shuffle=False,
                 worker_init_fn=seed_worker,
@@ -254,6 +274,8 @@ if __name__ == "__main__":
             test_loader = data_loader.UBFCPHYSLoader.UBFCPHYSLoader
         elif config.TEST.DATA.DATASET == "iBVP":
             test_loader = data_loader.iBVPLoader.iBVPLoader
+        elif config.TEST.DATA.DATASET == "CogPhys":
+            test_loader = data_loader.CogPhysLoader.CogPhysLoader
         else:
             raise ValueError("Unsupported dataset! Currently supporting UBFC-rPPG, PURE, MMPD, \
                              SCAMPS, BP4D+ (Normal and BigSmall preprocessing), UBFC-PHYS and iBVP.")
@@ -271,7 +293,7 @@ if __name__ == "__main__":
                 device=config.DEVICE)
             data_loader_dict["test"] = DataLoader(
                 dataset=test_data,
-                num_workers=16,
+                num_workers=2,
                 batch_size=config.INFERENCE.BATCH_SIZE,
                 shuffle=False,
                 worker_init_fn=seed_worker,
@@ -296,6 +318,8 @@ if __name__ == "__main__":
             unsupervised_loader = data_loader.UBFCPHYSLoader.UBFCPHYSLoader
         elif config.UNSUPERVISED.DATA.DATASET == "iBVP":
             unsupervised_loader = data_loader.iBVPLoader.iBVPLoader
+        elif config.UNSUPERVISED.DATA.DATASET == "CogPhys":
+            unsupervised_loader = data_loader.CogPhysLoader.CogPhysLoader
         else:
             raise ValueError("Unsupported dataset! Currently supporting UBFC-rPPG, PURE, MMPD, \
                              SCAMPS, BP4D+, UBFC-PHYS and iBVP.")
@@ -307,7 +331,7 @@ if __name__ == "__main__":
             device=config.DEVICE)
         data_loader_dict["unsupervised"] = DataLoader(
             dataset=unsupervised_data,
-            num_workers=16,
+            num_workers=2,
             batch_size=1,
             shuffle=False,
             worker_init_fn=seed_worker,

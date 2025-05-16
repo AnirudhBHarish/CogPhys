@@ -71,12 +71,13 @@ def calculate_metrics(predictions, labels, config):
                 print(f"Window frame size of {len(pred_window)} is smaller than minimum pad length of 9. Window ignored!")
                 continue
 
-            if config.TEST.DATA.PREPROCESS.LABEL_TYPE == "Standardized" or \
-                    config.TEST.DATA.PREPROCESS.LABEL_TYPE == "Raw":
+            if "Standardize" in (config.TEST.DATA.COGPHYS.LABEL_TYPE)[0] or \
+                    "Raw" in (config.TEST.DATA.COGPHYS.LABEL_TYPE)[0]:
                 diff_flag_test = False
-            elif config.TEST.DATA.PREPROCESS.LABEL_TYPE == "DiffNormalized":
+            elif config.TEST.DATA.COGPHYS.LABEL_TYPE == "DiffNormalized":
                 diff_flag_test = True
             else:
+                print('Currently label type is', config.TEST.DATA.COGPHYS.LABEL_TYPE)
                 raise ValueError("Unsupported label type in testing!")
             
             if config.INFERENCE.EVALUATION_METHOD == "peak detection":

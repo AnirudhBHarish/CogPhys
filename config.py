@@ -90,7 +90,23 @@ _C.TRAIN.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_W = 9
 _C.TRAIN.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_H = 9
 _C.TRAIN.DATA.PREPROCESS.IBVP = CN()
 _C.TRAIN.DATA.PREPROCESS.IBVP.DATA_MODE = 'RGB'
-
+_C.TRAIN.DATA.COGPHYS = CN()
+_C.TRAIN.DATA.COGPHYS.INPUT = []
+_C.TRAIN.DATA.COGPHYS.LABEL = []
+_C.TRAIN.DATA.COGPHYS.INPUT_TYPE = []
+_C.TRAIN.DATA.COGPHYS.LABEL_TYPE = []
+_C.TRAIN.DATA.COGPHYS.INPUT_FS = []
+_C.TRAIN.DATA.COGPHYS.LABEL_FS = []
+_C.TRAIN.DATA.COGPHYS.SEQ_LENGTH = 300
+_C.TRAIN.DATA.COGPHYS.RET_DICT = False
+_C.TRAIN.DATA.COGPHYS.H_SIZE = 128
+_C.TRAIN.DATA.COGPHYS.W_SIZE = 128
+_C.TRAIN.DATA.COGPHYS.NUMRX = 4
+_C.TRAIN.DATA.COGPHYS.NUMTX = 3
+_C.TRAIN.DATA.COGPHYS.NUMADCSAMPLES = 256
+_C.TRAIN.DATA.COGPHYS.LIGHT_SPEED_METER_PER_SEC = 299792458
+_C.TRAIN.DATA.COGPHYS.FREQ_SLOPE_M_HZ_PER_USEC = 60
+_C.TRAIN.DATA.COGPHYS.ADC_SAMPLE_RATE_MSPS = 5
 
 # -----------------------------------------------------------------------------
 # Valid settings
@@ -155,6 +171,21 @@ _C.VALID.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_W = 9
 _C.VALID.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_H = 9
 _C.VALID.DATA.PREPROCESS.IBVP = CN()
 _C.VALID.DATA.PREPROCESS.IBVP.DATA_MODE = 'RGB'
+_C.VALID.DATA.COGPHYS = CN()
+_C.VALID.DATA.COGPHYS.INPUT = []
+_C.VALID.DATA.COGPHYS.LABEL = []
+_C.VALID.DATA.COGPHYS.INPUT_TYPE = []
+_C.VALID.DATA.COGPHYS.LABEL_TYPE = []
+_C.VALID.DATA.COGPHYS.INPUT_FS = []
+_C.VALID.DATA.COGPHYS.LABEL_FS = []
+_C.VALID.DATA.COGPHYS.SEQ_LENGTH = 300
+_C.VALID.DATA.COGPHYS.RET_DICT = False
+_C.VALID.DATA.COGPHYS.NUMRX = 4
+_C.VALID.DATA.COGPHYS.NUMTX = 3
+_C.VALID.DATA.COGPHYS.NUMADCSAMPLES = 256
+_C.VALID.DATA.COGPHYS.LIGHT_SPEED_METER_PER_SEC = 299792458
+_C.VALID.DATA.COGPHYS.FREQ_SLOPE_M_HZ_PER_USEC = 60
+_C.VALID.DATA.COGPHYS.ADC_SAMPLE_RATE_MSPS = 5
 
 # -----------------------------------------------------------------------------
 # Test settings
@@ -222,6 +253,22 @@ _C.TEST.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_W = 9
 _C.TEST.DATA.PREPROCESS.BIGSMALL.RESIZE.SMALL_H = 9
 _C.TEST.DATA.PREPROCESS.IBVP = CN()
 _C.TEST.DATA.PREPROCESS.IBVP.DATA_MODE = 'RGB'
+_C.TEST.DATA.COGPHYS = CN()
+_C.TEST.DATA.COGPHYS.INPUT = []
+_C.TEST.DATA.COGPHYS.LABEL = []
+_C.TEST.DATA.COGPHYS.INPUT_TYPE = []
+_C.TEST.DATA.COGPHYS.LABEL_TYPE = []
+_C.TEST.DATA.COGPHYS.INPUT_FS = []
+_C.TEST.DATA.COGPHYS.LABEL_FS = []
+_C.TEST.DATA.COGPHYS.SEQ_LENGTH = 300
+_C.TEST.DATA.COGPHYS.RET_DICT = False
+_C.TEST.DATA.COGPHYS.NUMRX = 4
+_C.TEST.DATA.COGPHYS.NUMTX = 3
+_C.TEST.DATA.COGPHYS.NUMADCSAMPLES = 256
+_C.TEST.DATA.COGPHYS.LIGHT_SPEED_METER_PER_SEC = 299792458
+_C.TEST.DATA.COGPHYS.FREQ_SLOPE_M_HZ_PER_USEC = 60
+_C.TEST.DATA.COGPHYS.ADC_SAMPLE_RATE_MSPS = 5
+
 # -----------------------------------------------------------------------------
 # Unsupervised method settings
 # -----------------------------------------------------------------------------\
@@ -286,6 +333,10 @@ _C.UNSUPERVISED.DATA.PREPROCESS.IBVP.DATA_MODE = 'RGB'
 _C.MODEL = CN()
 # Model name
 _C.MODEL.NAME = ''
+# Type
+_C.MODEL.TYPE = 'HR'
+# Pretrained
+_C.MODEL.PRETRAINED = None
 # Checkpoint to resume, could be overwritten by command line argument
 _C.MODEL.RESUME = ''
 # Dropout rate
@@ -296,6 +347,32 @@ _C.MODEL.MODEL_DIR = 'PreTrainedModels'
 _C.MODEL.PHYSNET = CN()
 _C.MODEL.PHYSNET.FRAME_NUM = 64
 
+# -----------------------------------------------------------------------------
+# Specific parameters for WaveformFusion parameters
+# -----------------------------------------------------------------------------
+_C.MODEL.WAVEFORMFUSION = CN()
+_C.MODEL.WAVEFORMFUSION.CHANNELS = 2
+_C.MODEL.WAVEFORMFUSION.FRAME_NUM = 300
+# -----------------------------------------------------------------------------
+# Specific parameters for RADARNET parameters
+# -----------------------------------------------------------------------------
+_C.MODEL.RADARNET = CN()
+_C.MODEL.RADARNET.CHANNELS = 20
+_C.MODEL.RADARNET.FRAME_NUM = 300
+# -----------------------------------------------------------------------------
+# Specific parameters for ContrastFusion parameters
+# -----------------------------------------------------------------------------
+_C.MODEL.CONTRASTFUSION = CN()
+_C.MODEL.CONTRASTFUSION.FRAME_NUM = 160
+_C.MODEL.CONTRASTFUSION.S = 2
+_C.MODEL.CONTRASTFUSION.CHANNELS = 3
+# -----------------------------------------------------------------------------
+# Specific parameters for ContrastPhys parameters
+# -----------------------------------------------------------------------------
+_C.MODEL.CONTRASTPHYS = CN()
+_C.MODEL.CONTRASTPHYS.FRAME_NUM = 160
+_C.MODEL.CONTRASTPHYS.S = 2
+_C.MODEL.CONTRASTPHYS.CHANNELS = 3
 # -----------------------------------------------------------------------------
 # Specific parameters for iBVPNet parameters
 # -----------------------------------------------------------------------------

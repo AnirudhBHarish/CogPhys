@@ -1,0 +1,88 @@
+BASE: ['']
+TOOLBOX_MODE: "train_and_test" # "train_and_test"  or "only_test"
+TRAIN:
+  BATCH_SIZE: 2
+  EPOCHS: 50
+  LR: 1e-5
+  MODEL_FILE_NAME: CogPhys_rPPG_ch3_PhysNet
+  PLOT_LOSSES_AND_LR: True
+  DATA:
+    FS: 30
+    DATASET: CogPhys
+    DATA_FORMAT: NCDHW
+    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    CACHED_PATH: ""
+    EXP_DATA_NAME: "rgb_mamba"
+    FOLD:
+      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+    COGPHYS:
+      INPUT: ['rgb_left']
+      LABEL: ['ppg']
+      INPUT_TYPE: [['NormAndFloat']]
+      LABEL_TYPE: [['Downsample', "Standardize"]]
+      INPUT_FS: [30]
+      LABEL_FS: [60]
+      SEQ_LENGTH: 300
+      RET_DICT: False
+VALID:
+  DATA:
+    FS: 30
+    DATASET: CogPhys
+    DATA_FORMAT: NCDHW
+    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    CACHED_PATH: ""
+    EXP_DATA_NAME: "rgb_mamba"
+    FOLD:
+      FOLD_NAME: 'fold_0'
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+    COGPHYS:
+      INPUT: ['rgb_left']
+      LABEL: ['ppg']
+      INPUT_TYPE: [['NormAndFloat']]
+      LABEL_TYPE: [['Downsample', "Standardize"]]
+      INPUT_FS: [30]
+      LABEL_FS: [60]
+      SEQ_LENGTH: 300
+      RET_DICT: False
+TEST:
+  METRICS: ['MAE', 'RMSE', 'MAPE', 'Pearson', 'SNR', 'BA']
+  USE_LAST_EPOCH: False                   # to use provided validation dataset to find the best epoch, should be false
+  DATA:
+    FS: 30
+    DATASET: CogPhys
+    DATA_FORMAT: NCDHW
+    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    CACHED_PATH: ""
+    EXP_DATA_NAME: "nir_mamba_pre"
+    FOLD:
+      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+    COGPHYS:
+      INPUT: ['rgb_left']
+      LABEL: ['ppg']
+      INPUT_TYPE: [['NormAndFloat']]
+      LABEL_TYPE: [['Downsample', "Standardize"]]
+      INPUT_FS: [30]
+      LABEL_FS: [60]
+      SEQ_LENGTH: 300
+      RET_DICT: False
+    FILTERING:
+      USE_EXCLUSION_LIST: True
+      EXCLUSION_LIST: ['s3_T1', 's8_T1', 's9_T1', 's26_T1', 's28_T1', 's30_T1', 's31_T1', 's32_T1']
+DEVICE: cuda:0
+NUM_OF_GPU_TRAIN: 1
+LOG:
+  PATH: runs/exp
+MODEL:
+  PRETRAINED: "pretrained_mamaba_rgb.pth"
+  TYPE: HR
+  DROP_RATE: 0.2
+  NAME: PhysMamba
+INFERENCE:
+  BATCH_SIZE: 2
+  EVALUATION_METHOD: "FFT"        # "FFT" or "peak detection"
+  EVALUATION_WINDOW:
+    USE_SMALLER_WINDOW: False        # Change this if you'd like an evaluation window smaller than the test video length
+    WINDOW_SIZE: 10        # In seconds
+  MODEL_PATH: ""

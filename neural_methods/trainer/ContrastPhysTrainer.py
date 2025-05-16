@@ -3,18 +3,20 @@ import os
 from collections import OrderedDict
 
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 from evaluation.metrics import calculate_metrics
-from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson
+from neural_methods.loss.PhysNetNegPearsonLoss import Smooth_Neg_Pearson
+from neural_methods.loss.ContrastLoss import ContrastLoss, CalculateNormPSD
 from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
-from neural_methods.model.PhysNet import PhysNet_padding_Encoder_Decoder_MAX
+from neural_methods.model.ContrastPhys import ContrastPhys
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
 from tqdm import tqdm
 
 
-class PhysnetTrainer(BaseTrainer):
+class ContrastPhysTrainer(BaseTrainer):
 
     def __init__(self, config, data_loader):
         """Inits parameters from args and the writer for TensorboardX."""
@@ -30,8 +32,14 @@ class PhysnetTrainer(BaseTrainer):
         self.min_valid_loss = None
         self.best_epoch = 0
 
-        self.model = PhysNet_padding_Encoder_Decoder_MAX(
-            frames=config.MODEL.PHYSNET.FRAME_NUM).to(self.device)  # [3, T, 128,128]
+        self.model = ContrastPhys(S=config.MODEL.CONTRASTPHYS.S, 
+                                  in_ch=config.MODEL.CONTRASTPHYS.CHANNELS).to(self.device)
+        if config.MODEL.PRETRAINED is not None:
+            self.model.load_state_dict(torch.load(config.MODEL.PRETRAINED, 
+                                                  map_location=self.device))
+            print("Pre-trained:", config.MODEL.PRETRAINED)
+        else:
+            print("No pre-trained model loaded!")
 
         if config.MODEL.TYPE == "RR":
             self.lower_cutoff = 5
@@ -46,14 +54,14 @@ class PhysnetTrainer(BaseTrainer):
 
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
-            self.loss_model = Neg_Pearson()
+            self.contrast_loss = ContrastLoss(config.MODEL.CONTRASTPHYS.FRAME_NUM, 1, 
+                                              config.TRAIN.DATA.FS, self.lower_cutoff, self.upper_cutoff,
+                                              dist='combined')
+            print(self.contrast_loss.distance_func)
+            self.loss_model = Smooth_Neg_Pearson(2, window_size)
             self.snr_loss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
                                                Fs=config.TRAIN.DATA.FS)
-            self.optimizer = optim.Adam(
-                self.model.parameters(), lr=config.TRAIN.LR)
-            # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
-            # self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            #     self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+            self.optimizer = optim.AdamW(self.model.parameters(), lr=config.TRAIN.LR)
         elif config.TOOLBOX_MODE == "only_test":
             pass
         else:
@@ -67,6 +75,7 @@ class PhysnetTrainer(BaseTrainer):
         mean_training_losses = []
         mean_valid_losses = []
         lrs = []
+        norm = CalculateNormPSD(self.config.TRAIN.DATA.FS, self.lower_cutoff, self.upper_cutoff)
         for epoch in range(self.max_epoch_num):
             print('')
             print(f"====Training Epoch: {epoch}====")
@@ -76,16 +85,47 @@ class PhysnetTrainer(BaseTrainer):
             tbar = tqdm(data_loader["train"], ncols=80)
             for idx, batch in enumerate(tbar):
                 tbar.set_description("Train epoch %s" % epoch)
-                rPPG, x_visual, x_visual3232, x_visual1616 = self.model(
-                    batch[0].to(torch.float32).to(self.device))
-                BVP_label = batch[1].to(
-                    torch.float32).to(self.device)
-                rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
-                BVP_label = (BVP_label - torch.mean(BVP_label)) / \
-                            torch.std(BVP_label)  # normalize
-                loss = self.loss_model(rPPG, BVP_label)
-                loss += self.snr_loss(rPPG, BVP_label)
+                model_out = self.model(batch[0].to(torch.float32).to(self.device))
+                rPPG = model_out[:, -1]
+                BVP_label = batch[1].to(torch.float32).to(self.device)
+                rPPG = (rPPG - torch.mean(rPPG, dim=1, keepdim=True)) \
+                            / torch.std(rPPG, dim=1, keepdim=True)  # normalize
+                BVP_label = (BVP_label - torch.mean(BVP_label, dim=1, keepdim=True)) \
+                            / torch.std(BVP_label, dim=1, keepdim=True)  # normalize
+                
+                loss, p_loss, n_loss, p_loss_gt, n_loss_gt = self.contrast_loss(model_out, BVP_label,
+                                                                                torch.ones(2).to(self.device))
+                loss += self.loss_model(rPPG, BVP_label) + self.snr_loss(rPPG, BVP_label)
                 loss.backward()
+
+                with torch.no_grad():
+                    rppg_psd = [norm(rPPG[i]) for i in range(rPPG.shape[0])]
+                    bvp_psd = [norm(BVP_label[i]) for i in range(BVP_label.shape[0])]
+
+                plt.figure(figsize=(10, 5))
+                plt.subplot(1, 2, 1)
+                plt.plot(rPPG[0].detach().cpu().numpy(), label='rPPG')
+                plt.plot(BVP_label[0].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.subplot(1, 2, 2)
+                plt.plot(rPPG[1].detach().cpu().numpy(), label='rPPG')
+                plt.plot(BVP_label[1].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.savefig("rPPG_BVP.png")
+                plt.close()
+
+                plt.figure(figsize=(10, 5))
+                plt.subplot(1, 2, 1)
+                plt.plot(rppg_psd[0].detach().cpu().numpy(), label='rPPG PSD')
+                plt.plot(bvp_psd[0].detach().cpu().numpy(), label='BVP PSD')
+                plt.legend()
+                plt.subplot(1, 2, 2)
+                plt.plot(rppg_psd[1].detach().cpu().numpy(), label='rPPG PSD')
+                plt.plot(bvp_psd[1].detach().cpu().numpy(), label='BVP PSD')
+                plt.legend()
+                plt.savefig("rPPG_BVP_PSD.png")
+                plt.close()
+
                 running_loss += loss.item()
                 if idx % 100 == 99:  # print every 100 mini-batches
                     print(
@@ -94,11 +134,9 @@ class PhysnetTrainer(BaseTrainer):
                 train_loss.append(loss.item())
 
                 # Append the current learning rate to the list
-                # lrs.append(self.scheduler.get_last_lr())
                 lrs.append(0)
 
                 self.optimizer.step()
-                # self.scheduler.step()
                 self.optimizer.zero_grad()
                 tbar.set_postfix(loss=loss.item())
 
@@ -140,8 +178,7 @@ class PhysnetTrainer(BaseTrainer):
                 vbar.set_description("Validation")
                 BVP_label = valid_batch[1].to(
                     torch.float32).to(self.device)
-                rPPG, x_visual, x_visual3232, x_visual1616 = self.model(
-                    valid_batch[0].to(torch.float32).to(self.device))
+                rPPG = self.model(valid_batch[0].to(torch.float32).to(self.device))[:,-1]
                 rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
                 BVP_label = (BVP_label - torch.mean(BVP_label)) / \
                             torch.std(BVP_label)  # normalize

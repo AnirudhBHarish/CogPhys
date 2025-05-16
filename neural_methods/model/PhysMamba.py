@@ -131,7 +131,7 @@ def conv_block(in_channels, out_channels, kernel_size, stride, padding, bn=True,
 
 
 class PhysMamba(nn.Module):
-    def __init__(self, theta=0.5, drop_rate1=0.25, drop_rate2=0.5, frames=128):
+    def __init__(self, theta=0.5, drop_rate1=0.25, drop_rate2=0.5, frames=300):
         super(PhysMamba, self).__init__()
 
         self.ConvBlock1 = conv_block(3, 16, [1, 5, 5], stride=1, padding=[0, 2, 2])  

@@ -4,11 +4,13 @@ from collections import OrderedDict
 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 import random
 from evaluation.metrics import calculate_metrics
-from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson
+from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson, Smooth_Neg_Pearson
+from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
 from neural_methods.model.PhysMamba import PhysMamba
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
@@ -39,15 +41,34 @@ class PhysMambaTrainer(BaseTrainer):
         self.model = PhysMamba().to(self.device)  # [3, T, 128,128]
         if self.num_of_gpu > 0:
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
+        if config.MODEL.PRETRAINED is not None:
+            self.model.load_state_dict(torch.load(config.MODEL.PRETRAINED, 
+                                                  map_location=self.device))
+            print("Pre-trained:", config.MODEL.PRETRAINED)
+        else:
+            print("No pre-trained model loaded!")
+
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45
+            window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
 
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
-            self.criterion_Pearson = Neg_Pearson()
+            self.criterion_Pearson = Smooth_Neg_Pearson(2, window_size)
+            self.SNRLoss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=config.TRAIN.LR, weight_decay = 0.0005)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+            # self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            #     self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
         elif config.TOOLBOX_MODE == "only_test":
             self.criterion_Pearson_test = Neg_Pearson()
             pass
@@ -78,20 +99,47 @@ class PhysMambaTrainer(BaseTrainer):
                 self.optimizer.zero_grad()
                 pred_ppg = self.model(data)
 
-                pred_ppg = (pred_ppg-torch.mean(pred_ppg, axis=-1).view(-1, 1))/torch.std(pred_ppg, axis=-1).view(-1, 1)    # normalize
-                
-                labels = (labels - torch.mean(labels)) / \
-                            torch.std(labels)
+                pred_ppg = (pred_ppg - torch.mean(pred_ppg, dim=1, keepdim=True)) \
+                            / torch.std(pred_ppg, dim=1, keepdim=True)  # normalize
+                labels = (labels - torch.mean(labels, dim=1, keepdim=True)) \
+                            / torch.std(labels, dim=1, keepdim=True)  # normalize
+
                 loss = self.criterion_Pearson(pred_ppg, labels)
+                loss += self.SNRLoss(pred_ppg, labels)
 
                 loss.backward()
+
+                plt.figure(figsize=(10, 5))
+                plt.subplot(1, 2, 1)
+                plt.plot(pred_ppg[0].detach().cpu().numpy(), label='rPPG')
+                plt.plot(labels[0].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.subplot(1, 2, 2)
+                plt.plot(pred_ppg[1].detach().cpu().numpy(), label='rPPG')
+                plt.plot(labels[1].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.savefig("rPPG_BVP.png")
+                plt.close()
+
+                # plt.figure(figsize=(10, 5))
+                # plt.subplot(1, 2, 1)
+                # plt.plot(rppg_psd[0].detach().cpu().numpy(), label='rPPG PSD')
+                # plt.plot(bvp_psd[0].detach().cpu().numpy(), label='BVP PSD')
+                # plt.legend()
+                # plt.subplot(1, 2, 2)
+                # plt.plot(rppg_psd[1].detach().cpu().numpy(), label='rPPG PSD')
+                # plt.plot(bvp_psd[1].detach().cpu().numpy(), label='BVP PSD')
+                # plt.legend()
+                # plt.savefig("rPPG_BVP_PSD.png")
+                # plt.close()
+
                 running_loss += loss.item()
                 if idx % 100 == 99:  # print every 100 mini-batches
                     print(
                         f'[{epoch}, {idx + 1:5d}] loss: {running_loss / 100:.3f}')
                     running_loss = 0.0
                 self.optimizer.step()
-                self.scheduler.step()
+                # self.scheduler.step()
                 tbar.set_postfix(loss=loss.item())
             
             self.save_model(epoch)

@@ -3,18 +3,19 @@ import os
 from collections import OrderedDict
 
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 from evaluation.metrics import calculate_metrics
-from neural_methods.loss.PhysNetNegPearsonLoss import Neg_Pearson
+from neural_methods.loss.PhysNetNegPearsonLoss import Smooth_Neg_Pearson
+from neural_methods.loss.ContrastLoss import ContrastLoss, CalculateNormPSD
 from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
-from neural_methods.model.PhysNet import PhysNet_padding_Encoder_Decoder_MAX
+from neural_methods.model.WaveformFusion import WaveformFusion
 from neural_methods.trainer.BaseTrainer import BaseTrainer
 from torch.autograd import Variable
 from tqdm import tqdm
 
-
-class PhysnetTrainer(BaseTrainer):
+class WaveformFusionTrainer(BaseTrainer):
 
     def __init__(self, config, data_loader):
         """Inits parameters from args and the writer for TensorboardX."""
@@ -30,8 +31,9 @@ class PhysnetTrainer(BaseTrainer):
         self.min_valid_loss = None
         self.best_epoch = 0
 
-        self.model = PhysNet_padding_Encoder_Decoder_MAX(
-            frames=config.MODEL.PHYSNET.FRAME_NUM).to(self.device)  # [3, T, 128,128]
+        self.channels = config.MODEL.WAVEFORMFUSION.CHANNELS
+        print("WaveformFusion channels: ", self.channels)
+        self.model = WaveformFusion(channels=self.channels).to(self.device).train()
 
         if config.MODEL.TYPE == "RR":
             self.lower_cutoff = 5
@@ -46,14 +48,15 @@ class PhysnetTrainer(BaseTrainer):
 
         if config.TOOLBOX_MODE == "train_and_test":
             self.num_train_batches = len(data_loader["train"])
-            self.loss_model = Neg_Pearson()
+            self.contrast_loss = ContrastLoss(config.MODEL.WAVEFORMFUSION.FRAME_NUM, 1, 
+                                              config.TRAIN.DATA.FS, self.lower_cutoff, self.upper_cutoff,
+                                              dist='combined')
+            print(self.contrast_loss.distance_func)
+            self.loss_model = Smooth_Neg_Pearson(2, window_size)
             self.snr_loss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
                                                Fs=config.TRAIN.DATA.FS)
-            self.optimizer = optim.Adam(
-                self.model.parameters(), lr=config.TRAIN.LR)
-            # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
-            # self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            #     self.optimizer, max_lr=config.TRAIN.LR, epochs=config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+            self.mse = torch.nn.MSELoss()
+            self.optimizer = optim.AdamW(self.model.parameters(), lr=config.TRAIN.LR)
         elif config.TOOLBOX_MODE == "only_test":
             pass
         else:
@@ -63,7 +66,7 @@ class PhysnetTrainer(BaseTrainer):
         """Training routine for model"""
         if data_loader["train"] is None:
             raise ValueError("No data for train")
-
+        
         mean_training_losses = []
         mean_valid_losses = []
         lrs = []
@@ -76,16 +79,37 @@ class PhysnetTrainer(BaseTrainer):
             tbar = tqdm(data_loader["train"], ncols=80)
             for idx, batch in enumerate(tbar):
                 tbar.set_description("Train epoch %s" % epoch)
-                rPPG, x_visual, x_visual3232, x_visual1616 = self.model(
-                    batch[0].to(torch.float32).to(self.device))
-                BVP_label = batch[1].to(
-                    torch.float32).to(self.device)
-                rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
-                BVP_label = (BVP_label - torch.mean(BVP_label)) / \
-                            torch.std(BVP_label)  # normalize
-                loss = self.loss_model(rPPG, BVP_label)
-                loss += self.snr_loss(rPPG, BVP_label)
+                GT_sig = batch[1].to(torch.float32).to(self.device) # B, T
+                input_sig = batch[0].to(self.device) # B, T
+
+                resp, _ = self.model(input_sig)
+                
+                resp = (resp - torch.mean(resp, dim=1, keepdim=True)) \
+                            / torch.std(resp, dim=1, keepdim=True)  # normalize
+                GT_sig = (GT_sig - torch.mean(GT_sig, dim=1, keepdim=True)) \
+                            / torch.std(GT_sig, dim=1, keepdim=True)  # normalize
+
+                # double the resp samples for contrast loss
+                resp_for_contrast_loss = torch.cat([resp.unsqueeze(1), resp.unsqueeze(1)], dim=1)
+
+                # define the loss functions
+                label_flag = torch.ones(2).to(self.device)
+                loss, _, _, _, _ =  self.contrast_loss(resp_for_contrast_loss, GT_sig, label_flag)
+                loss += self.loss_model(resp, GT_sig)
+                loss += self.snr_loss(resp, GT_sig)
+
                 loss.backward()
+
+                try:
+                    plt.plot(resp[0].detach().cpu().numpy())
+                    plt.savefig(f"resp.png")
+                    plt.close()
+                    plt.plot(GT_sig[0].detach().cpu().numpy())
+                    plt.savefig(f"gt.png")
+                    plt.close()
+                except Exception as e:
+                    print("Error in plotting PSD: ", e)
+
                 running_loss += loss.item()
                 if idx % 100 == 99:  # print every 100 mini-batches
                     print(
@@ -94,11 +118,9 @@ class PhysnetTrainer(BaseTrainer):
                 train_loss.append(loss.item())
 
                 # Append the current learning rate to the list
-                # lrs.append(self.scheduler.get_last_lr())
                 lrs.append(0)
 
                 self.optimizer.step()
-                # self.scheduler.step()
                 self.optimizer.zero_grad()
                 tbar.set_postfix(loss=loss.item())
 
@@ -108,6 +130,7 @@ class PhysnetTrainer(BaseTrainer):
             self.save_model(epoch)
             if not self.config.TEST.USE_LAST_EPOCH: 
                 valid_loss = self.valid(data_loader)
+                # valid_loss = 0
                 mean_valid_losses.append(valid_loss)
                 print('validation loss: ', valid_loss)
                 if self.min_valid_loss is None:
@@ -138,14 +161,25 @@ class PhysnetTrainer(BaseTrainer):
             vbar = tqdm(data_loader["valid"], ncols=80)
             for valid_idx, valid_batch in enumerate(vbar):
                 vbar.set_description("Validation")
-                BVP_label = valid_batch[1].to(
-                    torch.float32).to(self.device)
-                rPPG, x_visual, x_visual3232, x_visual1616 = self.model(
-                    valid_batch[0].to(torch.float32).to(self.device))
-                rPPG = (rPPG - torch.mean(rPPG)) / torch.std(rPPG)  # normalize
-                BVP_label = (BVP_label - torch.mean(BVP_label)) / \
-                            torch.std(BVP_label)  # normalize
-                loss_ecg = self.loss_model(rPPG, BVP_label)
+                GT_sig = valid_batch[1].to(torch.float32).to(self.device) # B, T
+                input_sig = valid_batch[0].to(self.device) # B, T
+
+                resp, _ = self.model(input_sig)
+                
+                resp = (resp - torch.mean(resp, dim=1, keepdim=True)) \
+                            / torch.std(resp, dim=1, keepdim=True)  # normalize
+                GT_sig = (GT_sig - torch.mean(GT_sig, dim=1, keepdim=True)) \
+                            / torch.std(GT_sig, dim=1, keepdim=True)  # normalize
+
+                # double the resp samples for contrast loss
+                resp_for_contrast_loss = torch.cat([resp.unsqueeze(1), resp.unsqueeze(1)], dim=1)
+
+                # define the loss functions
+                label_flag = torch.ones(2).to(self.device)
+                loss_ecg, _, _, _, _ =  self.contrast_loss(resp_for_contrast_loss, GT_sig, label_flag)
+                loss_ecg += self.loss_model(resp, GT_sig)
+                loss_ecg += self.snr_loss(resp, GT_sig)
+
                 valid_loss.append(loss_ecg.item())
                 valid_step += 1
                 vbar.set_postfix(loss=loss_ecg.item())

@@ -6,10 +6,13 @@ Jitesh Joshi, Sos S. Agaian, and Youngjun Cho
 
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 import torch
 import torch.optim as optim
 from evaluation.metrics import calculate_metrics
 from neural_methods.loss.NegPearsonLoss import Neg_Pearson
+from neural_methods.loss.PhysNetNegPearsonLoss import Smooth_Neg_Pearson
+from neural_methods.loss.SNRLoss import SNRLoss_dB_Signals
 from neural_methods.model.FactorizePhys.FactorizePhys import FactorizePhys
 from neural_methods.model.FactorizePhys.FactorizePhysBig import FactorizePhysBig
 from neural_methods.trainer.BaseTrainer import BaseTrainer
@@ -39,6 +42,17 @@ class FactorizePhysTrainer(BaseTrainer):
         else:
             self.device = torch.device("cpu")  # if no GPUs set device is CPU
             self.num_of_gpu = 0  # no GPUs used
+
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45
+            window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
 
         frames = self.config.MODEL.FactorizePhys.FRAME_NUM
         in_channels = self.config.MODEL.FactorizePhys.CHANNELS
@@ -76,12 +90,14 @@ class FactorizePhysTrainer(BaseTrainer):
 
         if self.config.TOOLBOX_MODE == "train_and_test" or self.config.TOOLBOX_MODE == "only_train":
             self.num_train_batches = len(data_loader["train"])
-            self.criterion = Neg_Pearson()
+            self.criterion = Smooth_Neg_Pearson(2, window_size)
+            self.snr_loss = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.Adam(
                 self.model.parameters(), lr=self.config.TRAIN.LR)
             # See more details on the OneCycleLR scheduler here: https://pytorch.org/docs/stable/generated/torch.optim.lr_scheduler.OneCycleLR.html
-            self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
-                self.optimizer, max_lr=self.config.TRAIN.LR, epochs=self.config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
+            # self.scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            #     self.optimizer, max_lr=self.config.TRAIN.LR, epochs=self.config.TRAIN.EPOCHS, steps_per_epoch=self.num_train_batches)
         elif self.config.TOOLBOX_MODE == "only_test":
             pass
         else:
@@ -103,7 +119,7 @@ class FactorizePhysTrainer(BaseTrainer):
             train_loss = []
             appx_error_list = []
             self.model.train()
-            tbar = tqdm(data_loader["train"], ncols=80)
+            tbar = tqdm(data_loader["train"], ncols=120)
             for idx, batch in enumerate(tbar):
                 tbar.set_description("Train epoch %s" % epoch)
                 
@@ -112,7 +128,6 @@ class FactorizePhysTrainer(BaseTrainer):
                 
                 if len(labels.shape) > 2:
                     labels = labels[..., 0]     # Compatibility wigth multi-signal labelled data
-                labels = (labels - torch.mean(labels)) / torch.std(labels)  # normalize
                 last_frame = torch.unsqueeze(data[:, :, -1, :, :], 2).repeat(1, 1, max(self.num_of_gpu, 1), 1, 1)
                 data = torch.cat((data, last_frame), 2)
 
@@ -128,9 +143,13 @@ class FactorizePhysTrainer(BaseTrainer):
                 else:
                     pred_ppg, vox_embed = self.model(data)
                 
-                pred_ppg = (pred_ppg - torch.mean(pred_ppg)) / torch.std(pred_ppg)  # normalize
+                pred_ppg = (pred_ppg - torch.mean(pred_ppg, dim=1, keepdim=True)) \
+                            / torch.std(pred_ppg, dim=1, keepdim=True)  # normalize
+                labels = (labels - torch.mean(labels, dim=1, keepdim=True)) \
+                            / torch.std(labels, dim=1, keepdim=True)  # normalize
 
                 loss = self.criterion(pred_ppg, labels)
+                loss += self.snr_loss(pred_ppg, labels)
                 
                 loss.backward()
                 running_loss += loss.item()
@@ -142,11 +161,24 @@ class FactorizePhysTrainer(BaseTrainer):
                 if self.use_fsam:
                     appx_error_list.append(appx_error.item())
 
+                plt.figure(figsize=(10, 5))
+                plt.subplot(1, 2, 1)
+                plt.plot(pred_ppg[0].detach().cpu().numpy(), label='rPPG')
+                plt.plot(labels[0].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.subplot(1, 2, 2)
+                plt.plot(pred_ppg[1].detach().cpu().numpy(), label='rPPG')
+                plt.plot(labels[1].detach().cpu().numpy(), label='BVP')
+                plt.legend()
+                plt.savefig("rPPG_BVP_1.png")
+                plt.close()
+
                 # Append the current learning rate to the list
-                lrs.append(self.scheduler.get_last_lr())
+                # lrs.append(self.scheduler.get_last_lr())
+                lrs.append(0)
 
                 self.optimizer.step()
-                self.scheduler.step()
+                # self.scheduler.step()
                 
                 if self.use_fsam:
                     tbar.set_postfix({"appx_error": appx_error.item()}, loss=loss.item())
@@ -216,6 +248,7 @@ class FactorizePhysTrainer(BaseTrainer):
                     pred_ppg, vox_embed = self.model(data)
                 pred_ppg = (pred_ppg - torch.mean(pred_ppg)) / torch.std(pred_ppg)  # normalize
                 loss = self.criterion(pred_ppg, labels)
+
 
                 valid_loss.append(loss.item())
                 valid_step += 1

@@ -279,12 +279,19 @@ class Fusion_Stem(nn.Module):
           fusion_x [N*D,C,H/4,W/4]
         """
         N, D, C, H, W = x.shape
+        #print('permuted_input', x.shape)
         x1 = torch.cat([x[:,:1,:,:,:],x[:,:1,:,:,:],x[:,:D-2,:,:,:]],1)
         x2 = torch.cat([x[:,:1,:,:,:],x[:,:D-1,:,:,:]],1)
         x3 = x
         x4 = torch.cat([x[:,1:,:,:,:],x[:,D-1:,:,:,:]],1)
         x5 = torch.cat([x[:,2:,:,:,:],x[:,D-1:,:,:,:],x[:,D-1:,:,:,:]],1)
-        x_diff = self.stem12(torch.cat([x2-x1,x3-x2,x4-x3,x5-x4],2).view(N * D, 12, H, W))
+        #print(x1.shape, x2.shape, x3.shape, x4.shape, x5.shape)
+        
+        concat_diff = torch.cat([x2 - x1, x3 - x2, x4 - x3, x5 - x4], 2)
+        #print('concat_diff', concat_diff.shape)
+        x_diff = self.stem12(concat_diff.view(N * D, 12, H, W))
+        #print('x_diff', x_diff.shape)
+        
         x3 = x3.contiguous().view(N * D, C, H, W)
         x = self.stem11(x3)
 
@@ -294,6 +301,8 @@ class Fusion_Stem(nn.Module):
         #fusion layer2
         x_path2 = self.stem22(x_diff)
         x = self.apha*x_path1 + self.belta*x_path2
+        
+        #print('return x', x.shape)
         
         return x
     
@@ -340,14 +349,20 @@ class TPT_Block(nn.Module):
         Returns:
           x [N,C,D,H,W]
         """
+        N,C,D,H,W = x.shape
         for i in range(self.layer_n) :
+            #need padding due to integer division
+            if x.shape[2] % 2 != 0:  # D is not divisible by 2
+                last_slice = x[:, :, -1:, :, :]  # shape: [N, C, 1, H, W]
+                x = torch.cat([x, last_slice], dim=2)
             x = self.downsample_layers[i](x)
         for blk in self.blocks:
             x = blk(x)
         for i in range(self.layer_n) :
             x = self.upsample_layers[i](x)
 
-        return x
+        #need to cut the 4 extra dims, note how this causes an incontinuity in the predictions 
+        return x[:, :, :D, :, :]
     
 class RhythmFormer(nn.Module):
 
@@ -405,14 +420,36 @@ class RhythmFormer(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
     def forward(self, x):
+        x = x.permute(0,2,1,3,4) #I also added this - Diya 
         N, D, C, H, W = x.shape
         x = self.Fusion_Stem(x)    #[N*D 64 H/4 W/4]
+        #print('1', x.shape)
         x = x.view(N,D,64,H//4,W//4).permute(0,2,1,3,4)
+        #print('2', x.shape)
         x = self.patch_embedding(x)    #[N 64 D 8 8]
+        #print('3', x.shape)
         for i in range(3):
+            #print('input to stage', i, ':', x.shape)
             x = self.stages[i](x)    #[N 64 D 8 8]
+            #print('output of stage', i, ':', x.shape)
+        
+        '''
+        # Pad D to be exactly 300
+        if x.shape[2] != D:
+            #print('originally:', x.shape[2], 'padding this by:', D - x.shape[2] )
+            pad = 300 - x.shape[2]
+            last_frame = x[:, :, -1:, :, :]              # shape: [N, C, 1, H, W]
+            pad_tensor = last_frame.expand(-1, -1, pad, -1, -1)  # repeat along D
+            x = torch.cat([x, pad_tensor], dim=2)
+        '''
+
+            
+        #print('4', x.shape)
         features_last = torch.mean(x,3)    #[N, 64, D, 8]  
-        features_last = torch.mean(features_last,3)    #[N, 64, D]  
+        #print('5', features_last.shape)
+        features_last = torch.mean(features_last,3)    #[N, 64, D] 
+        #print('6', features_last.shape) 
         rPPG = self.ConvBlockLast(features_last)    #[N, 1, D]
+        #print('7', rPPG.shape)
         rPPG = rPPG.squeeze(1)
         return rPPG 
