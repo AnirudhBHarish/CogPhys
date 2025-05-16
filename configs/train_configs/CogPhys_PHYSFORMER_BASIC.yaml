@@ -2,9 +2,10 @@ BASE: ['']
 TOOLBOX_MODE: "train_and_test"      # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 2
-  EPOCHS: 10
+  EPOCHS: 50
   LR: 1e-4
   MODEL_FILE_NAME: CogPhys_rPPG_ch3_PhysFormer
+  #MODEL_FILE_NAME: CogPhys_rPPG_ch1_PhysFormer
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 30
@@ -13,11 +14,13 @@ TRAIN:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "RGB_PhysFormer"
+    #EXP_DATA_NAME: "NIR_PhysFormer"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
+      #INPUT: ['nir']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Standardize', 'Downsample']]
@@ -35,11 +38,13 @@ VALID:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "RGB_PhysFormer"
+    #EXP_DATA_NAME: "NIR_PhysFormer"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
+      #INPUT: ['nir']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Standardize', 'Downsample']]
@@ -57,11 +62,13 @@ TEST:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "RGB_PhysFormer"
+    #EXP_DATA_NAME: "NIR_PhysFormer"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
+      #INPUT: ['nir']
       LABEL: ['ppg']
       INPUT_TYPE: [['NormAndFloat']]
       LABEL_TYPE: [['Standardize', 'Downsample']]
@@ -77,6 +84,7 @@ NUM_OF_GPU_TRAIN: 1
 LOG:
   PATH: runs/exp
 MODEL:
+  TYPE: HR
   DROP_RATE: 0.1
   NAME: PhysFormer
   PHYSFORMER:                     # Probably need to update these in some meaningful way
