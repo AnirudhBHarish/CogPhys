@@ -4,7 +4,7 @@
 	- Modify /configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml with path names for model saving. Ensure the input key is 'rgb_left'
 	- python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml
 
-2)**rPPG, NIR:**
+2) **rPPG, NIR:**
   - Modify /configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml with path names for model saving. Ensure the input key is ['rgb_left', 'nir']
 	- python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml
    
