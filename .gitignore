@@ -5,6 +5,7 @@ __pycache__/
 *.png
 .idea
 pretrained*.pth
+combined_respiratory_waveforms
 waveforms
 tools/mamba/selective_scan_cuda.cpython-38-x86_64-linux-gnu.so
 preprocess

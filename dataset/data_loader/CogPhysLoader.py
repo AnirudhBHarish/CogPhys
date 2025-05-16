@@ -181,6 +181,15 @@ class CogPhysLoader(BaseLoader):
                     raise ValueError('Unsupported Data Format!')
             elif key in ['radar']:
                 concat_dim = -1
+            elif key in ['thermal_waveform', 'radar_waveform']:
+                if self.data_format == 'NTC':
+                    data[key] = data[key].unsqueeze(1)
+                    concat_dim = -1
+                elif self.data_format == 'NCT':
+                    data[key] = data[key].unsqueeze(0)
+                    concat_dim = 0
+                else:
+                    raise ValueError('Unsupported Data Format!')
             else:
                 raise ValueError('Unsupported Data Format!')
         if not self.ret_dict:
@@ -273,6 +282,7 @@ class CogPhysLoader(BaseLoader):
         # For now we implement the beramforming specifcally for 0 degree
         # For this dataset, particiapnts are a few centimeters away and almost at 0 degrees
         # data shape in this processed dataset is typically (T, Tx, Rx, 256)
+        data = data[..., 0, :] # choose only the 0th chirp
         data = data[:, :2] # The first 2 Tx help with azimuth beamforming
         data = data.reshape(data.shape[0], self.numRx*(self.numTx-1), data.shape[3]).mean(axis=1)
         return data

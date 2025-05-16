@@ -107,20 +107,20 @@ class ContrastFusion(nn.Module):
         rgb = x[:, :3, :, :, :] # (B, 3, T, 128, 128)
         nir = x[:, 3:, :, :, :] # (B, 3, T, 128, 128)
 
-        if self.training:
-            if torch.rand(1) > 0.5:
-                # randomly drop either one
-                # if torch.rand(1) > 0.25:
-                if torch.rand(1) > 0.5:
-                    rgb = torch.zeros_like(rgb)
-                else:
-                    nir = torch.zeros_like(nir)
-                # else:
-                #     # randomly zero out half the frames of either one
-                # if torch.rand(1) > 0.5:
-                #     rgb[:, :, torch.rand(rgb.shape[2]) < 0.5, :, :] = 0
-                # else:
-                #     nir[:, :, torch.rand(nir.shape[2]) < 0.5, :, :] = 0
+        # if self.training:
+        #     if torch.rand(1) > 0.5:
+        #         # randomly drop either one
+        #         # if torch.rand(1) > 0.25:
+        #         if torch.rand(1) > 0.5:
+        #             rgb = torch.zeros_like(rgb)
+        #         else:
+        #             nir = torch.zeros_like(nir)
+        #         # else:
+        #         #     # randomly zero out half the frames of either one
+        #         # if torch.rand(1) > 0.5:
+        #         #     rgb[:, :, torch.rand(rgb.shape[2]) < 0.5, :, :] = 0
+        #         # else:
+        #         #     nir[:, :, torch.rand(nir.shape[2]) < 0.5, :, :] = 0
 
         assert rgb.shape == nir.shape, f"Input shapes should be the same. Got {rgb.shape} and {nir.shape}"
 

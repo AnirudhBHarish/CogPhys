@@ -348,6 +348,12 @@ _C.MODEL.PHYSNET = CN()
 _C.MODEL.PHYSNET.FRAME_NUM = 64
 
 # -----------------------------------------------------------------------------
+# Specific parameters for WaveformFusion parameters
+# -----------------------------------------------------------------------------
+_C.MODEL.WAVEFORMFUSION = CN()
+_C.MODEL.WAVEFORMFUSION.CHANNELS = 2
+_C.MODEL.WAVEFORMFUSION.FRAME_NUM = 300
+# -----------------------------------------------------------------------------
 # Specific parameters for RADARNET parameters
 # -----------------------------------------------------------------------------
 _C.MODEL.RADARNET = CN()
