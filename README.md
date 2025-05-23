@@ -49,3 +49,7 @@ The code for cognitive load estiamtion and the associated readme files are in th
 ## Bias Analysis
 
 The `rppg_bias_analysis.ipynb` notebook can be run to obatin the bias number. The notebook requires the path to the `metadata.csv` and the folder containing the generated waveforms (from the test script). Please change the 2 paths and run the notebook to obtain the numbers, 
+
+## Algoritmic Baselines (RGB)
+
+The 4 algorithmic baselines have been implmented in the folder `algorithmic_baselines`. The base functions for the same have been taken from this repositoty under `undersupervised_methods` Please refer to the code and README in `algorithmic_baselines`.
