@@ -45,3 +45,7 @@ Note: Replace CONTRATPHYS with any other toolbox supported model such as PHYSMAM
 Similar to the first step in point (8) above, run the rPPG and resp notebooks to save the waveforms for the trained, val and test sets. Combine the 3 pickle files to create one pickle file with all the waveforms. This serves as the input to cognitive load estiamtion.
 
 The code for cognitive load estiamtion and the associated readme files are in the folder `cognitive_load`.
+
+## Bias Analysis
+
+The `rppg_bias_analysis.ipynb` notebook can be run to obatin the bias number. The notebook requires the path to the `metadata.csv` and the folder containing the generated waveforms (from the test script). Please change the 2 paths and run the notebook to obtain the numbers, 
