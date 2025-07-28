@@ -13,6 +13,7 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
+    DATA_TYPE: "RGB"
     #EXP_DATA_NAME: "Resp_PhysFormer"
     EXP_DATA_NAME: "Resp_below_PhysFormer"
     FOLD:
@@ -37,6 +38,7 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
+    DATA_TYPE: "RGB"
     #EXP_DATA_NAME: "Resp_PhysFormer"
     EXP_DATA_NAME: "Resp_below_PhysFormer"
     FOLD:
@@ -61,6 +63,7 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
+    DATA_TYPE: "RGB"
     #EXP_DATA_NAME: "Resp_PhysFormer"
     EXP_DATA_NAME: "Resp_below_PhysFormer"
     FOLD:

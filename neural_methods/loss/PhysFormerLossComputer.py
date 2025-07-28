@@ -57,10 +57,11 @@ class TorchLossComputer(object):
         return (1.0 / complex_absolute.sum()) * complex_absolute	# Analogous Softmax operator      
         
     @staticmethod
-    def cross_entropy_power_spectrum_loss(inputs, target, Fs):
+    def cross_entropy_power_spectrum_loss(inputs, target, Fs, lower, upper):
         inputs = inputs.view(1, -1)
         target = target.view(1, -1)
-        bpm_range = torch.arange(40, 180, dtype=torch.float).cuda()
+
+        bpm_range = torch.arange(lower, upper, dtype=torch.float).cuda()
 
         complex_absolute = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
 
@@ -73,7 +74,8 @@ class TorchLossComputer(object):
     def cross_entropy_power_spectrum_focal_loss(inputs, target, Fs, gamma):
         inputs = inputs.view(1, -1)
         target = target.view(1, -1)
-        bpm_range = torch.arange(40, 180, dtype=torch.float).cuda()
+        #bpm_range = torch.arange(40, 180, dtype=torch.float).cuda()
+        bpm_range = torch.arange(5, 45, dtype=torch.float).cuda()
 
         complex_absolute = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
 
@@ -87,9 +89,9 @@ class TorchLossComputer(object):
 
         
     @staticmethod
-    def cross_entropy_power_spectrum_forward_pred(inputs, Fs):
+    def cross_entropy_power_spectrum_forward_pred(inputs, Fs, lower, upper):
         inputs = inputs.view(1, -1)
-        bpm_range = torch.arange(40, 190, dtype=torch.float).cuda()
+        bpm_range = torch.arange(lower, upper, dtype=torch.float).cuda()
 
         complex_absolute = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
 
@@ -99,19 +101,19 @@ class TorchLossComputer(object):
         return whole_max_idx
     
     @staticmethod
-    def cross_entropy_power_spectrum_DLDL_softmax2(inputs, target, Fs, std):
+    def cross_entropy_power_spectrum_DLDL_softmax2(inputs, target, Fs, std, lower, upper):
         #quick fix for now, not a great way
-        if target<40 or target>179:
-            target = target.to('cuda').clamp(40, 179)
+        if target<lower or target>upper:
+            target = target.to('cuda').clamp(lower, upper)
             print('clamped')
-        target_distribution = [normal_sampling(int(target), i, std) for i in range(40, 180)]
+        target_distribution = [normal_sampling(int(target), i, std) for i in range(lower, upper+1)]
         target_distribution = [i if i > 1e-15 else 1e-15 for i in target_distribution]
         target_distribution = torch.Tensor(target_distribution).to(torch.device('cuda'))
         
         inputs = inputs.view(1, -1)
         target = target.view(1, -1)
         
-        bpm_range = torch.arange(40, 180, dtype=torch.float).to(torch.device('cuda'))
+        bpm_range = torch.arange(lower, upper+1, dtype=torch.float).to(torch.device('cuda'))
 
         ca = TorchLossComputer.complex_absolute(inputs, Fs, bpm_range)
         

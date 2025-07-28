@@ -13,6 +13,8 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
+    DATA_TYPE: "RGB"
+    #DATA_TYPE: "NIR"
     EXP_DATA_NAME: "RGB_PhysFormer"
     #EXP_DATA_NAME: "NIR_PhysFormer"
     FOLD:
@@ -37,6 +39,8 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
+    #DATA_TYPE: "RGB"
+    DATA_TYPE: "NIR"
     EXP_DATA_NAME: "RGB_PhysFormer"
     #EXP_DATA_NAME: "NIR_PhysFormer"
     FOLD:
@@ -61,6 +65,8 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
+    #DATA_TYPE: "RGB"
+    DATA_TYPE: "NIR"
     EXP_DATA_NAME: "RGB_PhysFormer"
     #EXP_DATA_NAME: "NIR_PhysFormer"
     FOLD:

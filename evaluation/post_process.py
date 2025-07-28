@@ -32,14 +32,14 @@ def power2db(mag):
     """Convert power to db."""
     return 10 * np.log10(mag)
 
-def _calculate_fft_hr(ppg_signal, fs=60, low_pass=0.6, high_pass=3.3):
+def _calculate_fft_hr(ppg_signal, cutoff_freq_low, cutoff_freq_high, fs):
     """Calculate heart rate based on PPG using Fast Fourier transform (FFT)."""
     ppg_signal = np.expand_dims(ppg_signal, 0)
     #print('input shape', ppg_signal.shape)
     N = _next_power_of_2(ppg_signal.shape[1])
     f_ppg, pxx_ppg = scipy.signal.periodogram(ppg_signal, fs=fs, nfft=N, detrend=False)
     #print('psd output', f_ppg.shape, pxx_ppg.shape)
-    fmask_ppg = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass))
+    fmask_ppg = np.argwhere((f_ppg >= cutoff_freq_low) & (f_ppg <= cutoff_freq_high))
     #print('2', fmask_ppg.shape)
     mask_ppg = np.take(f_ppg, fmask_ppg)
     #print('3', mask_ppg.shape)
@@ -80,7 +80,7 @@ def _compute_macc(pred_signal, gt_signal):
     macc = max(tlcc_list)
     return macc
 
-def _calculate_SNR(pred_ppg_signal, hr_label, fs=30, low_pass=0.6, high_pass=3.3):
+def _calculate_SNR(pred_ppg_signal, hr_label, cutoff_freq_low, cutoff_freq_high, fs):
     """Calculate SNR as the ratio of the area under the curve of the frequency spectrum around the first and second harmonics 
         of the ground truth HR frequency to the area under the curve of the remainder of the frequency spectrum, from 0.6 Hz
         to 3.3 Hz. 
@@ -109,7 +109,7 @@ def _calculate_SNR(pred_ppg_signal, hr_label, fs=30, low_pass=0.6, high_pass=3.3
     # Calculate the indices corresponding to the frequency ranges
     idx_harmonic1 = np.argwhere((f_ppg >= (first_harmonic_freq - deviation)) & (f_ppg <= (first_harmonic_freq + deviation)))
     idx_harmonic2 = np.argwhere((f_ppg >= (second_harmonic_freq - deviation)) & (f_ppg <= (second_harmonic_freq + deviation)))
-    idx_remainder = np.argwhere((f_ppg >= low_pass) & (f_ppg <= high_pass) \
+    idx_remainder = np.argwhere((f_ppg >= cutoff_freq_low) & (f_ppg <= cutoff_freq_high) \
      & ~((f_ppg >= (first_harmonic_freq - deviation)) & (f_ppg <= (first_harmonic_freq + deviation))) \
      & ~((f_ppg >= (second_harmonic_freq - deviation)) & (f_ppg <= (second_harmonic_freq + deviation))))
 
@@ -131,7 +131,7 @@ def _calculate_SNR(pred_ppg_signal, hr_label, fs=30, low_pass=0.6, high_pass=3.3
         SNR = 0
     return SNR
 
-def calculate_metric_per_video(predictions, labels, fs=30, diff_flag=True, use_bandpass=True, hr_method='FFT'):
+def calculate_metric_per_video(predictions, labels, lower, upper, fs, diff_flag=True, use_bandpass=True, hr_method='FFT'):
     """Calculate video-level HR and SNR"""
     if diff_flag:  # if the predictions and labels are 1st derivative of PPG signal.
         predictions = _detrend(np.cumsum(predictions), 100)
@@ -140,21 +140,25 @@ def calculate_metric_per_video(predictions, labels, fs=30, diff_flag=True, use_b
         predictions = _detrend(predictions, 100)
         labels = _detrend(labels, 100)
     if use_bandpass:
-        # bandpass filter between [0.75, 2.5] Hz, equals [45, 150] beats per min
-        # bandpass filter between [0.6, 3.3] Hz, equals [36, 198] beats per min
-        [b, a] = butter(1, [0.6 / fs * 2, 3.3 / fs * 2], btype='bandpass')
+        # bandpass filter between [0.667, 4.1667] Hz, equals [40, 250] beats per min for HR
+        # bandpass filter between [0.0833, 0.75] Hz, equals [5, 45] beats per min for RR
+        
+        cutoff_freq_low = lower/60
+        cutoff_freq_high = upper/60
+        
+        [b, a] = butter(1, [cutoff_freq_low / fs * 2, cutoff_freq_high / fs * 2], btype='bandpass')
         predictions = scipy.signal.filtfilt(b, a, np.double(predictions))
         labels = scipy.signal.filtfilt(b, a, np.double(labels))
     
     macc = _compute_macc(predictions, labels)
 
     if hr_method == 'FFT':
-        hr_pred = _calculate_fft_hr(predictions, fs=fs)
-        hr_label = _calculate_fft_hr(labels, fs=fs)
+        hr_pred = _calculate_fft_hr(predictions, cutoff_freq_low, cutoff_freq_high, fs=fs)
+        hr_label = _calculate_fft_hr(labels, cutoff_freq_low, cutoff_freq_high, fs=fs)
     elif hr_method == 'Peak':
         hr_pred = _calculate_peak_hr(predictions, fs=fs)
         hr_label = _calculate_peak_hr(labels, fs=fs)
     else:
         raise ValueError('Please use FFT or Peak to calculate your HR.')
-    SNR = _calculate_SNR(predictions, hr_label, fs=fs)
+    SNR = _calculate_SNR(predictions, hr_label, cutoff_freq_low, cutoff_freq_high, fs=fs)
     return hr_label, hr_pred, SNR, macc

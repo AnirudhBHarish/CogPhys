@@ -43,24 +43,38 @@ class PhysFormerTrainer(BaseTrainer):
         self.batch_size = config.TRAIN.BATCH_SIZE
         self.num_of_gpu = config.NUM_OF_GPU_TRAIN
         self.frame_rate = config.TRAIN.DATA.FS
+        self.in_channels = 3 if config.TRAIN.DATA.DATA_TYPE=="RGB" else 1
+        print('data mode in channels', self.in_channels)
         self.config = config 
         self.min_valid_loss = None
         self.best_epoch = 0
+        
+        if config.MODEL.TYPE == "RR":
+            self.lower_cutoff = 5
+            self.upper_cutoff = 45 
+            self.window_size = 15
+        elif config.MODEL.TYPE == "HR":
+            self.lower_cutoff = 40
+            self.upper_cutoff = 250
+            self.window_size = 7
+        else:
+            raise ValueError("Model type not supported!")
 
         if config.TOOLBOX_MODE == "train_and_test":
             self.chunk_len = config.TRAIN.DATA.COGPHYS.SEQ_LENGTH
             self.model = ViT_ST_ST_Compact3_TDC_gra_sharp(
                 image_size=(self.chunk_len,config.TRAIN.DATA.COGPHYS.H_SIZE,config.TRAIN.DATA.COGPHYS.W_SIZE), 
                 patches=(self.patch_size,) * 3, dim=self.dim, ff_dim=self.ff_dim, num_heads=self.num_heads, num_layers=self.num_layers, 
-                dropout_rate=self.dropout_rate, theta=self.theta).to(self.device)
+                dropout_rate=self.dropout_rate, in_channels=self.in_channels, theta=self.theta).to(self.device)
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
 
             self.num_train_batches = len(data_loader["train"])
             self.criterion_reg = torch.nn.MSELoss()
             self.criterion_L1loss = torch.nn.L1Loss()
             self.criterion_class = torch.nn.CrossEntropyLoss()
-            self.criterion_Pearson = Smooth_Neg_Pearson()
-            self.criterion_SNR = SNRLoss_dB_Signals()
+            self.criterion_Pearson = Smooth_Neg_Pearson(2, self.window_size)
+            self.criterion_SNR = SNRLoss_dB_Signals(pulse_band = [self.lower_cutoff / 60, self.upper_cutoff / 60], 
+                                               Fs=config.TRAIN.DATA.FS)
             self.optimizer = optim.Adam(self.model.parameters(), lr=config.TRAIN.LR, weight_decay=0.00005)
             # TODO: In both the PhysFormer repo's training example and other implementations of a PhysFormer trainer, 
             # a step_size that doesn't end up changing the LR always seems to be used. This seems to defeat the point
@@ -71,7 +85,7 @@ class PhysFormerTrainer(BaseTrainer):
             self.model = ViT_ST_ST_Compact3_TDC_gra_sharp(
                 image_size=(self.chunk_len,config.TRAIN.DATA.COGPHYS.H_SIZE,config.TRAIN.DATA.COGPHYS.W_SIZE), 
                 patches=(self.patch_size,) * 3, dim=self.dim, ff_dim=self.ff_dim, num_heads=self.num_heads, num_layers=self.num_layers, 
-                dropout_rate=self.dropout_rate, theta=self.theta).to(self.device)
+                dropout_rate=self.dropout_rate, in_channels=self.in_channels, theta=self.theta).to(self.device)
             self.model = torch.nn.DataParallel(self.model, device_ids=list(range(config.NUM_OF_GPU_TRAIN)))
         else:
             raise ValueError("Physformer trainer initialized in incorrect toolbox mode!")
@@ -127,7 +141,9 @@ class PhysFormerTrainer(BaseTrainer):
                         rPPG[bb],
                         hr[bb],
                         self.frame_rate,
-                        std=1.0
+                        std=1.0,
+                        lower = self.lower_cutoff,
+                        upper = self.upper_cutoff
                     )
                     fre_loss = fre_loss+fre_loss_temp
                     kl_loss = kl_loss+loss_distribution_kl
@@ -273,6 +289,9 @@ class PhysFormerTrainer(BaseTrainer):
         print('Saved Model Path: ', model_path)
 
     # HR calculation based on ground truth label
-    def get_hr(self, y, sr=30, min=30, max=180):
+    def get_hr(self, y):
+        sr=self.frame_rate
+        min=self.lower_cutoff
+        max=self.upper_cutoff
         p, q = welch(y, sr, nfft=1e5/sr, nperseg=np.min((len(y)-1, 256)))
         return p[(p>min/60)&(p<max/60)][np.argmax(q[(p>min/60)&(p<max/60)])]*60
