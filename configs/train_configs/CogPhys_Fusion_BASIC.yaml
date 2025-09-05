@@ -10,7 +10,7 @@ TRAIN:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop"
     FOLD:
@@ -30,7 +30,7 @@ VALID:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop"
     FOLD:
@@ -52,7 +52,7 @@ TEST:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "fusion_rppg_early_mid_pre_drop"
     FOLD:
@@ -75,7 +75,7 @@ NUM_OF_GPU_TRAIN: 2
 LOG:
   PATH: runs/exp
 MODEL:
-  PRETRAINED: "pretrained_nir_pre.pth"
+  PRETRAINED: "runs/exp/fold_1_nir_cp+/PreTrainedModels/CogPhys_rPPG_ch3_PhysNet_Epoch49.pth"
   TYPE: HR
   DROP_RATE: 0.2
   NAME: ContrastFusion

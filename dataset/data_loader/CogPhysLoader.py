@@ -223,8 +223,16 @@ class CogPhysLoader(BaseLoader):
             for folder in input_folders:
                 all_files = sorted(glob.glob(os.path.join(self.data_path, folder, f"{key}_*.npy")))
                 self.labels[key].extend(all_files)
+        # Exclude the follow if RGB
+        exclude_rgb = ["v23_read"]
+        if "rgb_left" in self.input_keys or "rgb_right" in self.input_keys:
+            print(f"Excluding {exclude_rgb} files from the dataset due to corrupted rgb video")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_rgb)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_rgb)]
         # Exclude the follow if NIR (blank frames)
-        exclude_nir = ["v19_still"]
+        exclude_nir = ["v19_still", "v23_read"]
         if "nir" in self.input_keys:
             print(f"Excluding {exclude_nir} files from the dataset due to corrupted nir video")
             for key in self.input_keys:
@@ -240,6 +248,14 @@ class CogPhysLoader(BaseLoader):
                 self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_resp)]
             for key in self.label_keys:
                 self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_resp)]
+        # exlude from thermal_below
+        exclude_thermal_below = ["v37_still"]
+        if "thermal_below" in self.input_keys:
+            print(f"Excluding {exclude_thermal_below} files from the dataset due to corrupted thermal_below video")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_thermal_below)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_thermal_below)]
         # if 'thermal_below" in self.input_key, only keep the files with "still" or "rest" in the name
         if self.name == "train" and ("thermal_below" in self.input_keys or "thermal_above" in self.input_keys or 
                                      "radar" in self.input_keys):
