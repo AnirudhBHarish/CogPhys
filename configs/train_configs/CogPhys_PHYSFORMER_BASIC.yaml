@@ -15,11 +15,11 @@ TRAIN:
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
     #DATA_TYPE: "NIR"
-    EXP_DATA_NAME: "RGB_PhysFormer"
-    #EXP_DATA_NAME: "NIR_PhysFormer"
+    EXP_DATA_NAME: "fold3/RGB_PhysFormer"
+    #EXP_DATA_NAME: "fold1/NIR_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
       #INPUT: ['nir']
@@ -39,13 +39,13 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    #DATA_TYPE: "RGB"
-    DATA_TYPE: "NIR"
-    EXP_DATA_NAME: "RGB_PhysFormer"
-    #EXP_DATA_NAME: "NIR_PhysFormer"
+    DATA_TYPE: "RGB"
+    #DATA_TYPE: "NIR"
+    EXP_DATA_NAME: "fold3/RGB_PhysFormer"
+    #EXP_DATA_NAME: "fold1/NIR_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_0'
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3'
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
       #INPUT: ['nir']
@@ -65,13 +65,13 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    #DATA_TYPE: "RGB"
-    DATA_TYPE: "NIR"
-    EXP_DATA_NAME: "RGB_PhysFormer"
-    #EXP_DATA_NAME: "NIR_PhysFormer"
+    DATA_TYPE: "RGB"
+    #DATA_TYPE: "NIR"
+    EXP_DATA_NAME: "fold3/RGB_PhysFormer"
+    #EXP_DATA_NAME: "fold1/NIR_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3' #Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
       #INPUT: ['nir']

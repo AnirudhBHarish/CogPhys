@@ -102,6 +102,7 @@ class CogPhysLoader(BaseLoader):
                     data[key] = self.norm_and_float_data(data[key], key)
                 elif preproc == 'DiffNormalized':
                     data[key] = self.diff_normalize_data(data[key])
+                    torch.cuda.empty_cache() # free up some memory
                 elif preproc == 'Standardize':
                     data[key] = self.standardized_data(data[key])
                 elif preproc == 'Raw':
@@ -127,6 +128,7 @@ class CogPhysLoader(BaseLoader):
                     # data[key] = self.norm_and_float_label(data[key])
                 elif preproc == 'DiffNormalized':
                     data[key] = self.diff_normalize_label(data[key])
+                    torch.cuda.empty_cache() # free up some memory
                 elif preproc == 'Standardize':
                     data[key] = self.standardized_label(data[key])
                 elif preproc == 'Raw':
@@ -223,8 +225,18 @@ class CogPhysLoader(BaseLoader):
             for folder in input_folders:
                 all_files = sorted(glob.glob(os.path.join(self.data_path, folder, f"{key}_*.npy")))
                 self.labels[key].extend(all_files)
+        # Exclude the follow if RGB
+        # Format must be /vXX_read/ where XX is the folder. 
+        # Else v00_read will be remove both v00_read and v100_read_rest
+        exclude_rgb = ["v23_read"]
+        if "rgb_left" in self.input_keys or "rgb_right" in self.input_keys:
+            print(f"Excluding {exclude_rgb} files from the dataset due to corrupted rgb video")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_rgb)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_rgb)]
         # Exclude the follow if NIR (blank frames)
-        exclude_nir = ["v19_still"]
+        exclude_nir = ["v19_still", "v23_read"]
         if "nir" in self.input_keys:
             print(f"Excluding {exclude_nir} files from the dataset due to corrupted nir video")
             for key in self.input_keys:
@@ -240,6 +252,14 @@ class CogPhysLoader(BaseLoader):
                 self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_resp)]
             for key in self.label_keys:
                 self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_resp)]
+        # exlude from thermal_below
+        exclude_thermal_below = ["v37_still"]
+        if "thermal_below" in self.input_keys:
+            print(f"Excluding {exclude_thermal_below} files from the dataset due to corrupted thermal_below video")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_thermal_below)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_thermal_below)]
         # if 'thermal_below" in self.input_key, only keep the files with "still" or "rest" in the name
         if self.name == "train" and ("thermal_below" in self.input_keys or "thermal_above" in self.input_keys or 
                                      "radar" in self.input_keys):
@@ -299,21 +319,20 @@ class CogPhysLoader(BaseLoader):
     @torch.no_grad()
     def diff_normalize_data(self, data):
         """Calculate discrete difference in video data along the time-axis and nornamize by its standard deviation."""
-        n, h, w, c = data.shape
-        diffnormalized_data = torch.zeros((n, h, w, c), dtype=torch.float32)
-        diffnormalized_data[:-1] = (data[1:] - data[:-1]) / (data[1:] + data[:-1] + 1e-7)
-        diffnormalized_data[:-1] = diffnormalized_data[:-1] / torch.std(diffnormalized_data[:-1])
-        diffnormalized_data[torch.isnan(diffnormalized_data)] = 0
-        return diffnormalized_data
+        data[:-1] = (data[1:] - data[:-1]) / (data[1:] + data[:-1] + 1e-7)
+        data[:-1] /= torch.std(data[:-1])
+        data[-1] = 0  # Set last slice to 0
+        data[torch.isnan(data)] = 0
+        return data
 
     @torch.no_grad()
     def diff_normalize_label(self, label):
         """Calculate discrete difference in labels along the time-axis and normalize by its standard deviation."""
-        diffnormalized_label = torch.zeros(label.shape, dtype=torch.float32)
-        diff_label = torch.diff(label, axis=0)
-        diffnormalized_label[:-1] = diff_label / torch.std(diff_label)
-        diffnormalized_label[torch.isnan(diffnormalized_label)] = 0
-        return diffnormalized_label
+        diff_val = label[1:] - label[:-1]
+        label[:-1] = diff_val / torch.std(diff_val)
+        label[-1] = 0
+        label[torch.isnan(label)] = 0
+        return label
 
     @torch.no_grad()
     def standardized_data(self, data):

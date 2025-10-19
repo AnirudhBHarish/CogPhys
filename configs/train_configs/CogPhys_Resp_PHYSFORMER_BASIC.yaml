@@ -4,8 +4,8 @@ TRAIN:
   BATCH_SIZE: 2
   EPOCHS: 100
   LR: 1e-4
-  #MODEL_FILE_NAME: CogPhys_resp_ch3_PhysFormer
-  MODEL_FILE_NAME: CogPhys_resp_below_ch3_PhysFormer
+  MODEL_FILE_NAME: CogPhys_resp_ch3_PhysFormer
+  #MODEL_FILE_NAME: CogPhys_resp_below_ch3_PhysFormer
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 15
@@ -14,14 +14,14 @@ TRAIN:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
-    #EXP_DATA_NAME: "Resp_PhysFormer"
-    EXP_DATA_NAME: "Resp_below_PhysFormer"
+    EXP_DATA_NAME: "fold3/Resp_PhysFormer"
+    #EXP_DATA_NAME: "fold3/Resp_below_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
-      #INPUT: ['thermal_above']
-      INPUT: ['thermal_below']
+      INPUT: ['thermal_above']
+      #INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -39,14 +39,14 @@ VALID:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
-    #EXP_DATA_NAME: "Resp_PhysFormer"
-    EXP_DATA_NAME: "Resp_below_PhysFormer"
+    EXP_DATA_NAME: "fold3/Resp_PhysFormer"
+    #EXP_DATA_NAME: "fold3/Resp_below_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_0'
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3'
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
-      #INPUT: ['thermal_above']
-      INPUT: ['thermal_below']
+      INPUT: ['thermal_above']
+      #INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -64,14 +64,14 @@ TEST:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
-    #EXP_DATA_NAME: "Resp_PhysFormer"
-    EXP_DATA_NAME: "Resp_below_PhysFormer"
+    EXP_DATA_NAME: "fold3/Resp_PhysFormer"
+    #EXP_DATA_NAME: "fold3/Resp_below_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
-      #INPUT: ['thermal_above']
-      INPUT: ['thermal_below']
+      INPUT: ['thermal_above']
+      #INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]

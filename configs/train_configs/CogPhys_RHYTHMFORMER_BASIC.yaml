@@ -14,10 +14,10 @@ TRAIN:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     #EXP_DATA_NAME: "RGB_RhythmFormer"
-    EXP_DATA_NAME: "NIR_RhythmFormer"
+    EXP_DATA_NAME: "fold3/NIR_RhythmFormer"
     FOLD:
-      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       #INPUT: ['rgb_left']
       INPUT: ['nir']
@@ -38,10 +38,10 @@ VALID:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     #EXP_DATA_NAME: "RGB_RhythmFormer"
-    EXP_DATA_NAME: "NIR_RhythmFormer"
+    EXP_DATA_NAME: "fold3/NIR_RhythmFormer"
     FOLD:
-      FOLD_NAME: 'fold_0'
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3'
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       #INPUT: ['rgb_left']
       INPUT: ['nir']
@@ -62,10 +62,10 @@ TEST:
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
     #EXP_DATA_NAME: "RGB_RhythmFormer"
-    EXP_DATA_NAME: "NIR_RhythmFormer"
+    EXP_DATA_NAME: "fold3/NIR_RhythmFormer"
     FOLD:
-      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_NAME: 'fold_3' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       #INPUT: ['rgb_left']
       INPUT: ['nir']

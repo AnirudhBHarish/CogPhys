@@ -10,9 +10,9 @@ TRAIN:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCT
-    DATA_PATH: "combined_respiratory_waveforms"
+    DATA_PATH: "/home/ab227/CogPhys/combined_respiratory_waveforms"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "resp_waveform_fusion1e-3_100_32"
+    EXP_DATA_NAME: "resp_waveform_fusion1e-3_100"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -30,9 +30,9 @@ VALID:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCT
-    DATA_PATH: "combined_respiratory_waveforms"
+    DATA_PATH: "/home/ab227/CogPhys/combined_respiratory_waveforms"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "resp_waveform_fusion1e-3_100_32"
+    EXP_DATA_NAME: "resp_waveform_fusion1e-3_100"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -52,9 +52,9 @@ TEST:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCT
-    DATA_PATH: "combined_respiratory_waveforms"
+    DATA_PATH: "/home/ab227/CogPhys/combined_respiratory_waveforms"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "resp_waveform_fusion1e-3_100_32"
+    EXP_DATA_NAME: "resp_waveform_fusion1e-3_100"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'

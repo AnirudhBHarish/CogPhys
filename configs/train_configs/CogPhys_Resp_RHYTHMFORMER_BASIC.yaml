@@ -2,7 +2,7 @@ BASE: ['']
 TOOLBOX_MODE: "train_and_test"      # "train_and_test"  or "only_test"
 TRAIN:
   BATCH_SIZE: 1
-  EPOCHS: 100  
+  EPOCHS: 100
   LR: 9e-3
   MODEL_FILE_NAME: CogPhys_resp_ch3_RhythmFormer #Note: I have forgotten to change this before, but all models saved in correct different folders, just named wrong
   #MODEL_FILE_NAME: CogPhys_resp_below_ch3_RhythmFormer
