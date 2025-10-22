@@ -11,7 +11,7 @@ TRAIN:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
     EXP_DATA_NAME: "fold3/Resp_PhysFormer"
@@ -36,7 +36,7 @@ VALID:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
     EXP_DATA_NAME: "fold3/Resp_PhysFormer"
@@ -61,7 +61,7 @@ TEST:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
     EXP_DATA_NAME: "fold3/Resp_PhysFormer"

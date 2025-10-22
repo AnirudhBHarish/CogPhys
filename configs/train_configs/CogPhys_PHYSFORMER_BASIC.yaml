@@ -11,14 +11,14 @@ TRAIN:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
     #DATA_TYPE: "NIR"
-    EXP_DATA_NAME: "fold3/RGB_PhysFormer"
-    #EXP_DATA_NAME: "fold1/NIR_PhysFormer"
+    EXP_DATA_NAME: "fold0_repeat/RGB_PhysFormer"
+    #EXP_DATA_NAME: "fold3/NIR_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_3' # Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
@@ -37,14 +37,14 @@ VALID:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
     #DATA_TYPE: "NIR"
-    EXP_DATA_NAME: "fold3/RGB_PhysFormer"
-    #EXP_DATA_NAME: "fold1/NIR_PhysFormer"
+    EXP_DATA_NAME: "fold0_repeat/RGB_PhysFormer"
+    #EXP_DATA_NAME: "fold3/NIR_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_3'
+      FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']
@@ -63,14 +63,14 @@ TEST:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     DATA_TYPE: "RGB"
     #DATA_TYPE: "NIR"
-    EXP_DATA_NAME: "fold3/RGB_PhysFormer"
-    #EXP_DATA_NAME: "fold1/NIR_PhysFormer"
+    EXP_DATA_NAME: "fold0_repeat/RGB_PhysFormer"
+    #EXP_DATA_NAME: "fold3/NIR_PhysFormer"
     FOLD:
-      FOLD_NAME: 'fold_3' #Due to the way config is coded, this is used a substitute for FOLD_NUM
+      FOLD_NAME: 'fold_0' #Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
       INPUT: ['rgb_left']

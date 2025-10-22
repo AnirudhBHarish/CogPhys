@@ -4,8 +4,8 @@ TRAIN:
   BATCH_SIZE: 1
   EPOCHS: 100
   LR: 9e-3
-  MODEL_FILE_NAME: CogPhys_resp_ch3_RhythmFormer #Note: I have forgotten to change this before, but all models saved in correct different folders, just named wrong
-  #MODEL_FILE_NAME: CogPhys_resp_below_ch3_RhythmFormer
+  #MODEL_FILE_NAME: CogPhys_resp_ch3_RhythmFormer #Note: I have forgotten to change this before, but all models saved in correct different folders, just named wrong
+  MODEL_FILE_NAME: CogPhys_resp_below_ch3_RhythmFormer
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 15
@@ -13,14 +13,14 @@ TRAIN:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "Resp_RhythmFormer"
-    #EXP_DATA_NAME: "Resp_below_RhythmFormer"
+    #EXP_DATA_NAME: "Resp_RhythmFormer"
+    EXP_DATA_NAME: "fold0_repeat/Resp_below_RhythmFormer"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
-      INPUT: ['thermal_above']
-      #INPUT: ['thermal_below']
+      #INPUT: ['thermal_above']
+      INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -37,14 +37,14 @@ VALID:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "Resp_RhythmFormer"
-    #EXP_DATA_NAME: "Resp_below_RhythmFormer"
+    #EXP_DATA_NAME: "Resp_RhythmFormer"
+    EXP_DATA_NAME: "fold0_repeat/Resp_below_RhythmFormer"
     FOLD:
       FOLD_NAME: 'fold_0'
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
-      INPUT: ['thermal_above']
-      #INPUT: ['thermal_below']
+      #INPUT: ['thermal_above']
+      INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -61,14 +61,14 @@ TEST:
     DATA_FORMAT: NCDHW
     DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "Resp_RhythmFormer"
-    #EXP_DATA_NAME: "Resp_below_RhythmFormer"
+    #EXP_DATA_NAME: "Resp_RhythmFormer"
+    EXP_DATA_NAME: "fold0_repeat/Resp_below_RhythmFormer"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
-      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
+      FOLD_PATH: './dataset/CogPhysFolds/CogPhys_extra_Folds.pkl'
     COGPHYS:
-      INPUT: ['thermal_above']
-      #INPUT: ['thermal_below']
+      #INPUT: ['thermal_above']
+      INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -80,7 +80,7 @@ TEST:
       USE_EXCLUSION_LIST: True
       EXCLUSION_LIST: ['s3_T1', 's8_T1', 's9_T1', 's26_T1', 's28_T1', 's30_T1', 's31_T1', 's32_T1']
 DEVICE: cuda:0
-NUM_OF_GPU_TRAIN: 1
+NUM_OF_GPU_TRAIN: 2
 LOG:
   PATH: runs/exp
 MODEL:
