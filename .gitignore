@@ -3,6 +3,7 @@ __pycache__/
 *.log
 *.mat
 *.png
+*.npy
 .idea
 pretrained*.pth
 combined_respiratory_waveforms
