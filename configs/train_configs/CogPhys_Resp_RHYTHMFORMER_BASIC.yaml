@@ -5,22 +5,19 @@ TRAIN:
   EPOCHS: 100  
   LR: 9e-3
   MODEL_FILE_NAME: CogPhys_resp_ch3_RhythmFormer #Note: I have forgotten to change this before, but all models saved in correct different folders, just named wrong
-  #MODEL_FILE_NAME: CogPhys_resp_below_ch3_RhythmFormer
   PLOT_LOSSES_AND_LR: True
   DATA:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "Resp_RhythmFormer"
-    #EXP_DATA_NAME: "Resp_below_RhythmFormer"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
       INPUT: ['thermal_above']
-      #INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -35,16 +32,14 @@ VALID:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "Resp_RhythmFormer"
-    #EXP_DATA_NAME: "Resp_below_RhythmFormer"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
       INPUT: ['thermal_above']
-      #INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
@@ -59,16 +54,14 @@ TEST:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "Resp_RhythmFormer"
-    #EXP_DATA_NAME: "Resp_below_RhythmFormer"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
     COGPHYS:
       INPUT: ['thermal_above']
-      #INPUT: ['thermal_below']
       LABEL: ['respiration']
       INPUT_TYPE: [['Downsample', 'NormAndFloat']]
       LABEL_TYPE: [['Downsample', "Standardize"]]
