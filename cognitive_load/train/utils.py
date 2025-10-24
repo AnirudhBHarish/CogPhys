@@ -10,12 +10,16 @@ from scipy import signal
 from scipy.signal import resample
 
 # Constants for file paths
-BASE_PATH = '/rdf/user/pg34/code/GM/lab_iccv/'
+BASE_PATH = ''
 NASA_TLX_FILE = os.path.join(BASE_PATH, 'data/GM_NASA_TLX.csv')
 FOLDS_FILE = os.path.join(BASE_PATH, 'data/CogPhys_all_Folds_new.pkl')
 RPPG_WAVEFORMS_FILE = os.path.join(BASE_PATH, 'data/rppg_waveforms.pkl')
 RESP_FUSION_WAVEFORMS_FILE = os.path.join(BASE_PATH, 'data/resp_fusion_waveforms.pkl')
-BLINK_MARKERS_FILE = os.path.join(BASE_PATH, 'data/eos_dict.pkl')
+# CV_RPPG_WAVEFORMS_FILE = os.path.join(BASE_PATH, 'data/crossval_rppg_waveforms.pickle')
+# CV_RESP_WAVEFORMS_FILE = os.path.join(BASE_PATH, 'data/crossval_resp_waveforms.pickle')
+CV_RPPG_WAVEFORMS_FILE = os.path.join(BASE_PATH, 'data/rppg_waveforms_2025_10.pickle')
+CV_RESP_WAVEFORMS_FILE = os.path.join(BASE_PATH, 'data/resp_waveforms_2025_10.pickle')
+BLINK_MARKERS_FILE = os.path.join(BASE_PATH, 'data/eos_norm_dict.pkl') # raw is eos_dict
 
 # Signal parameters
 RPPG_SAMPLING_RATE = 30.0  # Hz
@@ -36,6 +40,14 @@ SIGNAL_TYPES = ['ppg', 'resp', 'ecg', 'accel']  # All available signal types
 
 # Experimental configurations
 EXPERIMENT_CONFIGS = {
+    'contact_ppg_contact_resp': {
+        'use_contact_ppg': True,
+        'use_contact_resp': True,
+        'use_remote_ppg': False,
+        'use_remote_resp': False,
+        'use_blink': False,
+        'description': 'Contact PPG + Contact Resp'
+    },
     'remote_ppg_contact_resp': {
         'use_remote_ppg': True,
         'use_remote_resp': False,
@@ -53,6 +65,34 @@ EXPERIMENT_CONFIGS = {
         'use_remote_resp': True,
         'use_blink': True,
         'description': 'Remote PPG + Remote Resp + Blink Markers'
+    },
+    'contact_ppg_contact_resp_blink': {
+        'use_contact_ppg': True,
+        'use_contact_resp': True,
+        'use_remote_ppg': False,
+        'use_remote_resp': False,
+        'use_blink': True,
+        'description': 'Contact PPG + Contact Resp + Blink Markers'
+    },
+    'remote_ppg_only': {
+        'use_remote_ppg': True,
+        'use_remote_resp': False,
+        'use_blink': False,
+        'description': 'Remote PPG Only'
+    },
+    'contact_ppg_only': {
+        'use_contact_ppg': True,
+        'use_contact_resp': False,
+        'use_remote_ppg': False,
+        'use_remote_resp': False,
+        'use_blink': False,
+        'description': 'Contact PPG Only'
+    },
+    'blink_only': {
+        'use_remote_ppg': False,
+        'use_remote_resp': False,
+        'use_blink': True,
+        'description': 'Blink Markers Only'
     }
 }
 
@@ -176,13 +216,22 @@ def filter_signals_with_missing_data(X, y, keys, config):
     valid_indices = []
     
     # Determine which channels to check based on config
-    channels_to_check = [0]  # Always check rPPG (first channel)
+    channels_to_check = []
+    channel_index = 0
     
-    if config['use_remote_resp']:
-        channels_to_check.append(1)  # Check respiration (second channel)
-    
-    if config['use_blink']:
-        channels_to_check.append(2 if config['use_remote_resp'] else 1)  # Check blink channel
+    # Check PPG channel (remote or contact)
+    if config.get('use_remote_ppg', False) or config.get('use_contact_ppg', False):
+        channels_to_check.append(channel_index)
+        channel_index += 1
+        
+    # Check respiration channel (remote or contact)
+    if config.get('use_remote_resp', False) or config.get('use_contact_resp', False):
+        channels_to_check.append(channel_index)
+        channel_index += 1
+        
+    # Check blink channel
+    if config.get('use_blink', False):
+        channels_to_check.append(channel_index)
     
     # Check each sample
     for i in range(len(X)):
@@ -231,18 +280,21 @@ def load_nasa_tlx_scores(filename=NASA_TLX_FILE):
 def create_median_split_labels(filename=NASA_TLX_FILE, exclude_still_for_median=True):
     """
     Loads NASA-TLX, calculates sum score, and creates binary labels
+    The raw 6 columns corresponding to: (1) Mental Demand, (2) Physical Demand,
+    (3) Temporal Demand, (4) Performance, (5) Effort, (6) Frustration Level.
     (0=Low, 1=High) based on each participant's median score, optionally
     excluding the 'still' task when calculating the median.
     Returns a map: (participant_id, task_name) -> label (0 or 1)
     """
     df = pd.read_csv(filename)
     df.columns = df.columns.str.strip()
-    score_cols = ['Q3_1', 'Q3_3', 'Q3_5', 'Q3_6'] 
+    # score_cols = ['Q3_1', 'Q3_3', 'Q3_5', 'Q3_6'] 
+    score_cols = ['Q3_1'] # mental demand only for test
     df['raw_score_sum'] = df[score_cols].sum(axis=1)
     
     # --- Calculate median score ---
     if exclude_still_for_median:
-        # Filter out 'still' task BEFORE calculating median
+        # Filter out 'still' task BEFORE calculating the median
         active_tasks_df = df[df['Q2'] != 'still']
         median_scores = active_tasks_df.groupby('Participant ID')['raw_score_sum'].median()
         print("Calculated median excluding 'still' task.")
@@ -276,6 +328,9 @@ def create_median_split_labels(filename=NASA_TLX_FILE, exclude_still_for_median=
         label_map[(participant_id_str, task_name)] = label
         
     print(f"Created median-split labels for {len(label_map)} entries.")
+    print(f"The full-dataset overall class distribution is: "
+          f"{sum(1 for v in label_map.values() if v == 0)} Low, "
+          f"{sum(1 for v in label_map.values() if v == 1)} High\n\n")
     if skipped_count > 0:
         print(f"Warning: Skipped {skipped_count} entries due to missing median.")
         

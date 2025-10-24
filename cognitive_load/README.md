@@ -1,66 +1,35 @@
-# Cognitive Load Classification Scripts
+This folder contains a compact version of our cognitive load ML pipeline.
 
-This directory contains code for classifying cognitive load using physiological signals.
+Contents
+- train/run_experiments.py: CLI to run ML experiments per configuration/split, writes summary tables.
+- train/train_ml_models.py: Feature engineering and classical ML training/evaluation.
+- train/data_loader.py: Loads multimodal signals (remote/contact PPG/Resp, blink markers), builds inputs per config/split.
+- train/utils.py: Experiment configs, constants, NASA‑TLX label creation, signal helpers.
+- models/trainers.py, models/resnet1d.py: DL model definitions (optional; not required for ML-only runs).
 
-## Overview
+Quick start
+1) Install deps (Python 3.9+ recommended):
+   pip install -r requirements.txt
 
-The code implements both machine learning (ML) and deep learning (DL) approaches for classifying cognitive load (high/low) using:
-1. Remote PPG signals
-2. Remote Respiration signals
-3. Blink markers
+2) Prepare data (not included). Set DATA_ROOT to your data path (default: ./data):
+   export DATA_ROOT=/path/to/data
+   Expected files under :
+   - NASA_TLX.csv (present in the dataset)
+   - CogPhys_all_Folds.pkl (present in the codebase under dataset/CogPhysFolds/)
+   - crossval_rppg_waveforms.pickle (needs to be generated using the notebook from the main folder)
+   - crossval_resp_waveforms.pickle (needs to be generated using the notebook from the main folder)
+   - eos_norm_dict.pkl (needs to be generated using the eos_norm.py notebook in this folder)
+   - GT.pkl (for contact signals - can be generated using the notebook from the main folder)
 
-## Experiment Configurations
+3) Run ML experiments (example: remote PPG + remote Resp + blink, split 0):
+   python train/run_experiments.py --ml --exp remote_ppg_remote_resp_blink --split 0
+   Repeat for splits 0..3. Logs will be in ./results/experiments_log_split{split}.txt
 
-Three experiment configurations are supported:
-1. `remote_ppg_contact_resp`: Remote PPG + Contact Resp
-2. `remote_ppg_remote_resp`: Remote PPG + Remote Resp 
-3. `remote_ppg_remote_resp_blink`: Remote PPG + Remote Resp + Blink Markers
+4) Aggregate and generate LaTeX (optional):
+   python scripts/parse_cv_results.py
+   Appends aggregated stats and a LaTeX table to ./cv_results.log
 
-## Files
-
-- `data_loader.py`: Data loading and preprocessing functions
-- `train_ml_models.py`: Machine learning models pipeline (RF, GB, SVM, LR)
-- `train_dl_models.py`: Deep learning models pipeline (CNN, LSTM, ResNet)
-- `run_experiments.py`: Script to run all experiments
-
-## Running the Code
-
-To run all experiments:
-
-```bash
-python run_experiments.py --all
-```
-
-To run only machine learning models:
-
-```bash
-python run_experiments.py --ml
-```
-
-To run only deep learning models:
-
-```bash
-python run_experiments.py --dl
-```
-
-To run a specific experiment:
-
-```bash
-python run_experiments.py --exp remote_ppg_remote_resp_blink
-```
-
-## Results
-
-Results are saved in the `results` directory with timestamps. Each run produces:
-- Performance metrics (accuracy, F1, precision, recall)
-- Trained models (for DL models)
-- Log files
-
-## Data Requirements
-
-The code expects the following data files:
-- `./data/rppg_waveforms.pkl`: Remote PPG signals (30 Hz, 3600 samples)
-- `./data/resp_fusion_waveforms.pkl`: Remote respiration signals (15 Hz, 1800 samples)
-- `./data/eos_dict.pkl`: Blink markers (30 Hz, 3600 samples)
-
-These files should contain dictionaries with keys in the format `vXX_taskname`. 
+Notes
+- To change which inputs are used, see experiment keys in train/utils.py (EXPERIMENT_CONFIGS).
+- If you move data, prefer setting DATA_ROOT instead of editing code.
+- Results/ and model artifacts are intentionally excluded.
