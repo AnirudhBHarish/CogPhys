@@ -16,9 +16,9 @@ Quick start
    Expected files under :
    - NASA_TLX.csv (present in the dataset)
    - CogPhys_all_Folds.pkl (present in the codebase under dataset/CogPhysFolds/)
-   - crossval_rppg_waveforms.pickle (needs to be generated using the notebook from the main folder)
-   - crossval_resp_waveforms.pickle (needs to be generated using the notebook from the main folder)
-   - eos_norm_dict.pkl (needs to be generated using the eos_norm.py notebook in this folder)
+   - crossval_rppg_waveforms.pickle (needs to be generated using the `pool_signals.ipynb` notebook from the main folder)
+   - crossval_resp_waveforms.pickle (needs to be generated using the `pool_signals.ipynb` notebook from the main folder)
+   - eos_norm_dict.pkl (needs to be generated using `eos_norm.py` in this folder)
    - GT.pkl (for contact signals - can be generated using the notebook from the main folder)
 
 3) Run ML experiments (example: remote PPG + remote Resp + blink, split 0):

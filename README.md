@@ -9,6 +9,7 @@
 CogPhys is a comprehensive multimodal dataset for assessing cognitive load through physiological measurements. The dataset combines both remote (non-contact) and contact-based sensing modalities to enable robust cognitive load estimation in various conditions.
 
 **Key Features:**
+- **Dataset Size:** 37 participants performing 6 tasks for 2 mins each. Total of 220 recordings (two trial were corrupted).
 - **Multiple Modalities:** RGB, NIR, Thermal (above/below), Radar, and contact-based sensors
 - **Dual Tasks:** Remote photoplethysmography (rPPG) for heart rate and respiration monitoring
 - **Cognitive Load Assessment:** Physiological signals combined with cognitive task performance
@@ -50,7 +51,7 @@ The CogPhys dataset can be accessed by [filling this form / contacting us at ema
 
 ### Dataset Structure
 
-This dataset is organized as follows:
+This dataset (N=37) is organized as follows:
 
 ```
 participant_XX/
@@ -69,6 +70,21 @@ participant_XX/
 
 The `metadata.csv` with demographic information and csv file with the cognitive load labels are also provided in the root directory.
 
+### Files to drop
+
+The following files are not viable for unimodal analysis. The files are dropped from the dataset by the dataloader. The user does not need to drop these files manually. The dataloader will automatically drop these files, based on the input modality.
+
+- RGB: v23_read
+- NIR: v23_read, v19_still
+- Respiration (includes thermal and radar): v9_still, v7_still, v5_still, v31_still, v30_still, v15_still, v12_still, v11_still, v10_still
+- Radar = v26_read_rest, v31_still
+- During training, we recommend training the thermal and radar models with just the `still` and `rest` samples. Training is unstable with motion samples
+
+## Saved Checkpoints
+
+We prove the checkpoints of the models we trained. Please check `final_model_release/CogPhys`
+
+
 ## 🚀 Quick Start
 
 ### Train an rPPG Model (RGB)
@@ -85,6 +101,13 @@ python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.
 ```
 
 ## 🏋️ Training
+
+### Folds:
+
+1. `dataset/CogPhysFolds/CogPhys_all_Folds.pkl`: Contains 4 folds. Each of the 37 particpants appears exactly once in a test set. Pooling the test set will give you all 37 participants.
+2. `dataset/CogPhysFolds/CogPhys_data_gen_fold.pkl`: Contain 1 fold, with no train and validation set. It contains all 37 participants in the test set and is useful when generating waveforms.
+
+---
 
 ### rPPG Tasks
 
@@ -123,6 +146,8 @@ python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.
 ```bash
 python main.py --config_file ./configs/train_configs/CogPhys_Fusion_BASIC.yaml
 ```
+
+---
 
 ### Respiration Tasks
 
@@ -177,9 +202,9 @@ python main.py --config_file ./configs/train_configs/CogPhys_Resp_Fusion_BASIC.y
 #### 5. Waveform Fusion
 
 **Step 1: Generate Waveforms**
-1. Run `generate_resp_waveforms.ipynb` notebook
-2. Provide the path to save the pickle files
-3. Provide the path to create the chunked dataset
+1. Run `test_resp.ipynb` notebook to save the waveforms
+2. Inplace of using the regular pickle file use `CogPhys_data_gen_fold.pkl` (it contains all folder as test)
+3. Run `chunk_waveforms.ipynb` to 
 
 **Step 2: Train**
 1. Modify `configs/train_configs/CogPhys_Resp_Waveform_BASIC.yaml`
@@ -237,9 +262,11 @@ To use a different model, simply change the model name in the config file name a
 
 Similar to Step 1 in the Waveform Fusion training (point 5 in Respiration Tasks):
 
-1. Run the rPPG notebooks (`generate_rppg_waveforms.ipynb`) to save waveforms for train, val, and test sets
-2. Run the respiration notebooks (`generate_resp_waveforms.ipynb`) to save waveforms for train, val, and test sets
-4. Save the waveforms individually as pickle files
+1. Run the rPPG notebooks (`test_rppg.ipynb`) to save waveforms. 
+2. Run the respiration notebooks (`test_resp.ipynb`) to save waveforms.
+3. Run the `pool_signals.ipynb` notebook to pool the generated waveforms and save the pickle files required for cognitive load.
+
+Note: `pool_signals.ipynb` takes a list of waveform files (can also be of length 1). If you are working a single fold (e.g., fold 0), use the `CogPhys_data_gen_fold.pkl` with the test noteboks to generate the waveforms for all the samples. Then run `pool_signals.ipynb` with the single wavform file. Alternately, if you are performing 4-fold validation, generate seperate waveforms for the test set of each fold. Then run `pool_signals.ipynb` with the list of all the waveform files to generate the pickle files need to run cognitive load estimation.
 
 ### Training and Testing
 
