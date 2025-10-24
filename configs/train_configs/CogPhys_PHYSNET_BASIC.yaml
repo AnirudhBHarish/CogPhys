@@ -10,7 +10,7 @@ TRAIN:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "rgb_physnet"
     FOLD:
@@ -30,7 +30,7 @@ VALID:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "rgb_physnet"
     FOLD:
@@ -52,7 +52,7 @@ TEST:
     FS: 30
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
     EXP_DATA_NAME: "rgb_physnet"
     FOLD:

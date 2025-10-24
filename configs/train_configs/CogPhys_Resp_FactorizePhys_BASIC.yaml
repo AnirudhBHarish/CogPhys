@@ -10,9 +10,9 @@ TRAIN:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "tb_physnet"
+    EXP_DATA_NAME: "tb_mamba"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -30,9 +30,9 @@ VALID:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "tb_physnet"
+    EXP_DATA_NAME: "tb_mamba"
     FOLD:
       FOLD_NAME: 'fold_0'
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'
@@ -52,9 +52,9 @@ TEST:
     FS: 15
     DATASET: CogPhys
     DATA_FORMAT: NCDHW
-    DATA_PATH: "/shared/ab227/CogPhys/chunked_dataset"
+    DATA_PATH: "/shared/ab227/MainCogPhys/chunked_dataset"
     CACHED_PATH: ""
-    EXP_DATA_NAME: "tb_physnet"
+    EXP_DATA_NAME: "tb_mamba"
     FOLD:
       FOLD_NAME: 'fold_0' # Due to the way config is coded, this is used a substitute for FOLD_NUM
       FOLD_PATH: './dataset/CogPhysFolds/CogPhys_all_Folds.pkl'

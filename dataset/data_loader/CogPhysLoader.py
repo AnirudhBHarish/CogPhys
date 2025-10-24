@@ -65,14 +65,18 @@ class CogPhysLoader(BaseLoader):
         self.label_preproc = config_data.COGPHYS.LABEL_TYPE
         self.seq_len = config_data.COGPHYS.SEQ_LENGTH
         self.ret_dict = config_data.COGPHYS.RET_DICT
+        # This is the example key used for extract participant and task info
+        # It is also used for sanity checks when loading the data paths
         self.example_key = self.input_keys[0]
 
-        # samp_freq
+        # Sampling frequencies of the inputs and labels
         self.target_fs = config_data.FS
+        # This has been modified to support different fs for different modalities
+        # I.e., we use a list of the sampling frequencies for each modality
         self.input_fs = config_data.COGPHYS.INPUT_FS
         self.label_fs = config_data.COGPHYS.LABEL_FS
 
-        # Radar specific
+        # Radar specific. For CogPhys, use the default parameters
         self.numRx = config_data.COGPHYS.NUMRX
         self.numTx = config_data.COGPHYS.NUMTX
         self.numADCSamples = config_data.COGPHYS.NUMADCSAMPLES
@@ -83,11 +87,12 @@ class CogPhysLoader(BaseLoader):
         band_width = freq_slope_M_hz_per_usec * adc_sample_period_usec * 1e6
         self.range_resolution = light_speed_meter_per_sec / (2.0 * band_width)
 
+        # Here we load the datapaths and not the actual data
+        # This is due to the large size of the dataset.
         self.load_preprocessed_data()
 
         print('Cached Data Path', self.cached_path, end='\n\n')
         print('Data Path', self.data_path, end='\n\n')
-        # print('File List Path', self.file_list_path)
         print(f"{self.name} Preprocessed Dataset Length: {self.preprocessed_data_len}", end='\n\n')
 
     def __len__(self):
@@ -102,6 +107,7 @@ class CogPhysLoader(BaseLoader):
                     data[key] = self.norm_and_float_data(data[key], key)
                 elif preproc == 'DiffNormalized':
                     data[key] = self.diff_normalize_data(data[key])
+                    torch.cuda.empty_cache() # free up some memory
                 elif preproc == 'Standardize':
                     data[key] = self.standardized_data(data[key])
                 elif preproc == 'Raw':
@@ -127,6 +133,7 @@ class CogPhysLoader(BaseLoader):
                     # data[key] = self.norm_and_float_label(data[key])
                 elif preproc == 'DiffNormalized':
                     data[key] = self.diff_normalize_label(data[key])
+                    torch.cuda.empty_cache() # free up some memory
                 elif preproc == 'Standardize':
                     data[key] = self.standardized_label(data[key])
                 elif preproc == 'Raw':
@@ -140,23 +147,23 @@ class CogPhysLoader(BaseLoader):
     @torch.no_grad()
     def __getitem__(self, index):
         """Returns a clip of video(3,T,W,H) and it's corresponding signals(T)."""
-        # from the self.inputs dict and self.lavels dict, get the data and label for the index
+        # From the self.inputs dict and self.labels dict, get the data and label for the index
         example_file = self.inputs[self.example_key][index]
-        # get the folder in which the file is located
+        # Get the folder in which the file is located
         participant_task = example_file.split(os.sep)[-2]
-        # get the chunk_id of the file
+        # Get the chunk_id of the file
         chunk_id = example_file.split(os.sep)[-1][:-4].split('_')[-1]
         # Prepare the data and label paths
         data_path = {key: self.inputs[key][index] for key in self.input_keys}
         label_path = {key: self.labels[key][index] for key in self.label_keys}
         data = {}
         label = {}
-        # Use torch since operating on GPUs much faster for preprocessing
+        # Use torch since operating on GPU is much faster for preprocessing
         for inp_key in self.input_keys:
             data[inp_key] = torch.Tensor(np.load(data_path[inp_key]).astype(int)).to(self.device)
         for lab_key in self.label_keys:
             label[lab_key] = torch.Tensor(np.load(label_path[lab_key]).astype(float)).to(self.device)
-        # Preprocess the data and label
+        # Preprocess the data and label based on the config
         data = self.preproc_get_item_data(data)
         label = self.preproc_get_item_label(label)
         # Return the data and label
@@ -223,8 +230,19 @@ class CogPhysLoader(BaseLoader):
             for folder in input_folders:
                 all_files = sorted(glob.glob(os.path.join(self.data_path, folder, f"{key}_*.npy")))
                 self.labels[key].extend(all_files)
+        
+        # Exclude the follow if RGB
+        # Format must be /vXX_read/ where XX is the folder. 
+        # Else v00_read will be remove both v00_read and v100_read_rest
+        exclude_rgb = ["/v23_read/"]
+        if "rgb_left" in self.input_keys or "rgb_right" in self.input_keys:
+            print(f"Excluding {exclude_rgb} files from the dataset due to corrupted rgb video")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_rgb)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_rgb)]
         # Exclude the follow if NIR (blank frames)
-        exclude_nir = ["v19_still"]
+        exclude_nir = ["/v19_still/", "/v23_read/"]
         if "nir" in self.input_keys:
             print(f"Excluding {exclude_nir} files from the dataset due to corrupted nir video")
             for key in self.input_keys:
@@ -232,15 +250,24 @@ class CogPhysLoader(BaseLoader):
             for key in self.label_keys:
                 self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_nir)]
         # Exclude if respiration (corrupted signal)
-        exclude_resp = ["v9_still", "v7_still", "v5_still", "v31_still", "v30_still", 
-                            "v15_still", "v12_still", "v11_still", "v10_still"]
+        exclude_resp = ["/v9_still/", "/v7_still/", "/v5_still/", "/v31_still/", "/v30_still/", 
+                            "/v15_still/", "/v12_still/", "/v11_still/", "/v10_still/"]
         if "respiration" in self.label_keys:
             print(f"Excluding {exclude_resp} files from the dataset due to corrupted respiration signal")
             for key in self.input_keys:
                 self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_resp)]
             for key in self.label_keys:
                 self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_resp)]
-        # if 'thermal_below" in self.input_key, only keep the files with "still" or "rest" in the name
+        # Exclude from thermal when training
+        # A segment of the video is blank causing the training to break. Tests works fine.
+        exclude_thermal_train = ["/v37_still/"] 
+        if self.name == "train" and ("thermal_below" in self.input_keys or "thermal_above" in self.input_keys):
+            print(f"Excluding {exclude_thermal_train} files from the dataset due to corrupted thermal video")
+            for key in self.input_keys:
+                self.inputs[key] = [i for i in self.inputs[key] if not any(ex in i for ex in exclude_thermal_train)]
+            for key in self.label_keys:
+                self.labels[key] = [i for i in self.labels[key] if not any(ex in i for ex in exclude_thermal_train)]
+        # For respiration models using the raw data, the training was found to be unstable with motion tasks
         if self.name == "train" and ("thermal_below" in self.input_keys or "thermal_above" in self.input_keys or 
                                      "radar" in self.input_keys):
             print(f"Keeping only still and rest samples")
@@ -248,7 +275,7 @@ class CogPhysLoader(BaseLoader):
                 self.inputs[key] = [i for i in self.inputs[key] if any(ex in i for ex in ["still", "rest"])]
             for key in self.label_keys:
                 self.labels[key] = [i for i in self.labels[key] if any(ex in i for ex in ["still", "rest"])]
-        exclude_radar = ["v26_read_rest", "v31_still"]
+        exclude_radar = ["/v26_read_rest/", "/v31_still/"]
         if "radar" in self.input_keys:
             print(f"Excluding {exclude_radar} files from the dataset due to corrupted radar readings")
             for key in self.input_keys:
@@ -299,21 +326,20 @@ class CogPhysLoader(BaseLoader):
     @torch.no_grad()
     def diff_normalize_data(self, data):
         """Calculate discrete difference in video data along the time-axis and nornamize by its standard deviation."""
-        n, h, w, c = data.shape
-        diffnormalized_data = torch.zeros((n, h, w, c), dtype=torch.float32)
-        diffnormalized_data[:-1] = (data[1:] - data[:-1]) / (data[1:] + data[:-1] + 1e-7)
-        diffnormalized_data[:-1] = diffnormalized_data[:-1] / torch.std(diffnormalized_data[:-1])
-        diffnormalized_data[torch.isnan(diffnormalized_data)] = 0
-        return diffnormalized_data
+        data[:-1] = (data[1:] - data[:-1]) / (data[1:] + data[:-1] + 1e-7)
+        data[:-1] /= torch.std(data[:-1])
+        data[-1] = 0  # Set last slice to 0
+        data[torch.isnan(data)] = 0
+        return data
 
     @torch.no_grad()
     def diff_normalize_label(self, label):
         """Calculate discrete difference in labels along the time-axis and normalize by its standard deviation."""
-        diffnormalized_label = torch.zeros(label.shape, dtype=torch.float32)
-        diff_label = torch.diff(label, axis=0)
-        diffnormalized_label[:-1] = diff_label / torch.std(diff_label)
-        diffnormalized_label[torch.isnan(diffnormalized_label)] = 0
-        return diffnormalized_label
+        diff_val = label[1:] - label[:-1]
+        label[:-1] = diff_val / torch.std(diff_val)
+        label[-1] = 0
+        label[torch.isnan(label)] = 0
+        return label
 
     @torch.no_grad()
     def standardized_data(self, data):
