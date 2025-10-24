@@ -1,55 +1,290 @@
-## Instructions for training models using the rPPG-Toolbox with the CogPhys Dataset.
+# CogPhys: Assessing Cognitive Load via Multimodal Remote and Contact-based Physiological Sensing
 
-1) **rPPG, RGB:**
-    - Modify `/configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml` with path names for model saving. Ensure the input key is `['rgb_left']`
-    - `python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml`
+**Anirudh Bindiganavale Harish\*, Peikun Guo\*, Bhargav Ghanekar\*\*, Diya Gupta\*\***, Akilesh Rajavenkatanarayanan, Manoj Kumar Sharma, Maureen August, Akane Sano, Ashok Veeraraghavan
 
-2) **rPPG, NIR:**
-    - Modify `/configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml` with path names for model saving. Ensure the input key is `['nir']`
-    - `python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml`
+[Paper] | [Dataset] | [Project Page] | [Supplementary]
 
-3) **rPPG, Fusion:**
-    - Modify `/configs/train_configs/CogPhys_Fusion_BASIC.yaml` with path names for model saving. Ensure the input key is `['rgb_left', 'nir']`
-    - `python main.py --config_file ./configs/train_configs/CogPhys_Fusion_BASIC.yaml`
+## 📢 About
 
-4) **Resp, Thermal Above:**
-    - Modify `configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml` with path names for model saving. Ensure the input key is `['thermal above']`
-    - `python main.py --config_file .configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml`
+CogPhys is a comprehensive multimodal dataset for assessing cognitive load through physiological measurements. The dataset combines both remote (non-contact) and contact-based sensing modalities to enable robust cognitive load estimation in various conditions.
 
-5) **Resp, Thermal Below:**
-    - Modify `configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml` with path names for model saving. Ensure the input key is `['thermal below']`
-    - `python main.py --config_file .configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml`
+**Key Features:**
+- **Multiple Modalities:** RGB, NIR, Thermal (above/below), Radar, and contact-based sensors
+- **Dual Tasks:** Remote photoplethysmography (rPPG) for heart rate and respiration monitoring
+- **Cognitive Load Assessment:** Physiological signals combined with cognitive task performance
+- **Built on rPPG-Toolbox:** Compatible with the [rPPG-Toolbox](https://github.com/ubicomplab/rPPG-Toolbox) framework
 
-6) **Resp, Radar:**
-    - Modify `configs/train_configs/CogPhys_Resp_Radar_BASIC.yaml` with path names for model saving. Ensure the input key is `['radar']`
-    - `python main.py --config_file .configs/train_configs/CogPhys_Resp_Radar_BASIC.yaml`
+🔥 **Please star ⭐ this repo if you find it useful and cite our work if you use it in your research!** 🔥
 
-7) **Resp, Fusion:**
-    - Modify `configs/train_configs/CogPhys_Resp_Fusion_BASIC.yaml` with path names for model saving. Ensure the input key is `['thermal_below', 'thermal_above']`
-    - `python main.py --config_file ./configs/train_configs/CogPhys_Resp_Fusion_BASIC.yaml`
+## 📄 License
 
-8) **Resp, Wave Fusion:**
-    - Save the waveforms by runnin the test_resp.ipynb notebook. The last cell helps save the waveforms. Run the cell noteboook 3 times - once for train, val and test. You will need to change the dataload in the cell witht the tag `# FORWARD PASS`
-    - Using the pickle files saved in the previous step, run the `prep_resp_waveforms.ipynb` notebook to create a waveform dataset compatible with out dataloader.
-    - Modify `configs/train_configs/CogPhys_Resp_Fusion_BASIC.yaml` with path names for model saving. Ensure the input key is `['thermal_waveform', 'radar_waveform']`
-    - `python main.py --config_file ./configs/train_configs/CogPhys_Resp_Waveform_BASIC.yaml`
+This dataset is for **academic use only**. Commercial usage is prohibited.
 
-Note: Replace CONTRATPHYS with any other toolbox supported model such as PHYSMAMBA, DEEPHYS, PHYSNET, PHYSFORMER, RHYTHMFORMER, etc to run those models on the CogPhys Dataset. 
+This dataset requires a signed Data Use Agreement. Please contact Anirudh (anirudhbh@rice.edu) for more information. You may also contact Ashok Veeraraghavan (vashok@rice.edu).
 
-## For model testing and inference, follow these steps:
-1) For rPPG, run test_rppg.ipynb. In this file, you have to specify the config file of the pretrained model, the final saved model checkpoint path, and the directory to save generated waveforms. The rest of the notebook can be run as is to generate results.
-2) For resp, run test_resp.ipynb. In this file, you have to specify the config file of the pretrained model, the final saved model checkpoint path, and the directory to save generated waveforms. The rest of the notebook can be run as is to generate results.
+## 📰 Updates
 
-## Cognitive Load
+- **[2025/10]** Initial code release
 
-Similar to the first step in point (8) above, run the rPPG and resp notebooks to save the waveforms for the trained, val and test sets. Combine the 3 pickle files to create one pickle file with all the waveforms. This serves as the input to cognitive load estiamtion.
 
-The code for cognitive load estiamtion and the associated readme files are in the folder `cognitive_load`.
+## 🔧 Installation
 
-## Bias Analysis
+### Prerequisites
+- Python 3.8+
+- PyTorch 1.9+
+- CUDA (for GPU support)
 
-The `rppg_bias_analysis.ipynb` notebook can be run to obatin the bias number. The notebook requires the path to the `metadata.csv` and the folder containing the generated waveforms (from the test script). Please change the 2 paths and run the notebook to obtain the numbers, 
+### Environment Setup
 
-## Algoritmic Baselines (RGB)
+```bash
+git clone https://github.com/AnirudhBHarish/CogPhys.git
+cd CogPhys
+pip install -r requirements.txt
+```
 
-The 4 algorithmic baselines have been implmented in the folder `algorithmic_baselines`. The base functions for the same have been taken from this repositoty under `undersupervised_methods` Please refer to the code and README in `algorithmic_baselines`.
+## 📊 Dataset
+
+### Dataset Access
+
+The CogPhys dataset can be accessed by [filling this form / contacting us at email].
+
+### Dataset Structure
+
+This dataset is organized as follows:
+
+```
+participant_XX/
+├── task_YY/
+│   ├── NIR/
+│   ├── RGBD/
+│   ├── PPG/
+│   ├── Thermal_above/
+│   ├── Thermal_below/
+│   ├── Radar/
+│   ├── Chest Band
+│       ├── ECG
+│       ├── Respiration
+│       └── Accelerometer
+```
+
+The `metadata.csv` with demographic information and csv file with the cognitive load labels are also provided in the root directory.
+
+## 🚀 Quick Start
+
+### Train an rPPG Model (RGB)
+
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml
+```
+
+### Test and Evaluate
+
+```bash
+# Open and run test_rppg.ipynb notebook
+# Specify: config file, model checkpoint, output directory
+```
+
+## 🏋️ Training
+
+### rPPG Tasks
+
+#### 1. RGB-based rPPG
+
+**Setup:**
+1. Modify `configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['rgb_left']`
+
+**Run:**
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml
+```
+
+#### 2. NIR-based rPPG
+
+**Setup:**
+1. Modify `configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['nir']`
+
+**Run:**
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_CONTRASTPHYS_BASIC.yaml
+```
+
+#### 3. Fusion (RGB + NIR)
+
+**Setup:**
+1. Modify `configs/train_configs/CogPhys_Fusion_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['rgb_left', 'nir']`
+
+**Run:**
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_Fusion_BASIC.yaml
+```
+
+### Respiration Tasks
+
+#### 1. Thermal Above
+
+**Setup:**
+1. Modify `configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['thermal above']`
+
+**Run:**
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml
+```
+
+#### 2. Thermal Below
+
+**Setup:**
+1. Modify `configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['thermal below']`
+
+**Run:**
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_Resp_CONTRASTPHYS_BASIC.yaml
+```
+
+#### 3. Radar
+
+**Setup:**
+1. Modify `configs/train_configs/CogPhys_Resp_Radar_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['radar']`
+
+**Run:**
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_Resp_Radar_BASIC.yaml
+```
+
+#### 4. Fusion (Thermal Above + Below)
+
+**Setup:**
+1. Modify `configs/train_configs/CogPhys_Resp_Fusion_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['thermal_below', 'thermal_above']`
+
+**Run:**
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_Resp_Fusion_BASIC.yaml
+```
+
+#### 5. Waveform Fusion
+
+**Step 1: Generate Waveforms**
+1. Run `generate_resp_waveforms.ipynb` notebook
+2. Provide the path to save the pickle files
+3. Provide the path to create the chunked dataset
+
+**Step 2: Train**
+1. Modify `configs/train_configs/CogPhys_Resp_Waveform_BASIC.yaml`
+2. Set model save path
+3. Ensure input key is `['thermal_waveform', 'radar_waveform']`
+
+```bash
+python main.py --config_file ./configs/train_configs/CogPhys_Resp_Waveform_BASIC.yaml
+```
+
+### Using Different Models
+
+**Note:** Replace `CONTRASTPHYS` with any other rPPG-Toolbox supported model such as:
+- `PHYSMAMBA`
+- `DEEPHYS`
+- `PHYSNET`
+- `PHYSFORMER`
+- `RHYTHMFORMER`
+- and more...
+
+To use a different model, simply change the model name in the config file name and parameters.
+
+
+## 🧪 Testing and Evaluation
+
+### rPPG Evaluation
+
+1. Open `test_rppg.ipynb` notebook
+2. Specify the following in the notebook:
+   - Config file of the pretrained model
+   - Final saved model checkpoint path
+   - Directory to save generated waveforms
+3. Run the rest of the notebook as-is to generate results
+
+### Respiration Evaluation
+
+1. Open `test_resp.ipynb` notebook
+2. Specify the following in the notebook:
+   - Config file of the pretrained model
+   - Final saved model checkpoint path
+   - Directory to save generated waveforms
+3. Run the rest of the notebook as-is to generate results
+
+### Radar Evaluation
+
+1. Open `test_resp_radar.ipynb` notebook
+2. Specify the following in the notebook:
+   - Final saved model checkpoint path
+   - Directory to save generated waveforms
+3. Run the rest of the notebook as-is to generate results
+
+## 🧠 Cognitive Load Estimation
+
+### Prepare Waveform Data
+
+Similar to Step 1 in the Waveform Fusion training (point 5 in Respiration Tasks):
+
+1. Run the rPPG notebooks (`generate_rppg_waveforms.ipynb`) to save waveforms for train, val, and test sets
+2. Run the respiration notebooks (`generate_resp_waveforms.ipynb`) to save waveforms for train, val, and test sets
+4. Save the waveforms individually as pickle files
+
+### Training and Testing
+
+All code and instructions for cognitive load estimation are in the `cognitive_load/` folder.  
+Please refer to `cognitive_load/README.md` for detailed instructions.
+
+## 📈 Algorithmic Baselines (RGB)
+
+We provide 4 algorithmic baselines in the `algorithmic_baselines/` folder. These are traditional unsupervised methods for rPPG estimation.
+
+**Implementation Details:**
+- Base functions are taken from the rPPG-Toolbox repository under `unsupervised_methods/`
+- All baselines are adapted for the CogPhys dataset
+- Methods include traditional signal processing approaches (e.g., GREEN, ICA, CHROM, POS, etc.)
+
+**Usage:** Please refer to the code and README in `algorithmic_baselines/` for implementation details and usage instructions.
+
+## 📊 Bias Analysis
+
+The `rppg_bias_analysis.ipynb` notebook can be run to obtain the bias numbers.
+
+**Required Inputs:**
+1. Path to `metadata.csv`
+2. Folder containing the generated vitals (from the test script)
+
+**Steps:**
+1. Open `rppg_bias_analysis.ipynb` notebook
+2. Update the 2 paths mentioned above
+3. Run the notebook to obtain the bias metrics
+
+## 📝 Citation
+
+If you use CogPhys in your research, please cite:
+
+```bibtex
+@inproceedings{harish2025cogphys,
+  title={CogPhys: Assessing Cognitive Load via Multimodal Remote and Contact-based Physiological Sensing},
+  author={Harish, Anirudh Bindiganavale and Guo, Peikun and Ghanekar, Bhargav and Gupta, Diya and Rajavenkatanarayanan, Akilesh and Sharma, Manoj Kumar and August, Maureen and Sano, Akane and Veeraraghavan, Ashok},
+  booktitle={Neural Information Processing Systems},
+  year={2025}
+}
+```
+
+## 🙏 Acknowledgments
+
+This work builds upon the [rPPG-Toolbox](https://github.com/ubicomplab/rPPG-Toolbox). We thank the authors for their excellent framework.
+
+---
