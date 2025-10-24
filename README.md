@@ -6,7 +6,7 @@
 
 ## 📢 About
 
-CogPhys is a comprehensive multimodal dataset for assessing cognitive load through physiological measurements. The dataset combines both remote (non-contact) and contact-based sensing modalities to enable robust cognitive load estimation in various conditions.
+Official repository for the 2025 NeurIPS DB Track paper - CogPhys, a comprehensive multimodal dataset for assessing cognitive load through physiological measurements. The dataset combines both remote (non-contact) and contact-based sensing modalities to enable robust cognitive load estimation in various conditions.
 
 **Key Features:**
 - **Dataset Size:** 37 participants performing 6 tasks for 2 mins each. Total of 220 recordings (two trial were corrupted).
@@ -302,11 +302,13 @@ The `rppg_bias_analysis.ipynb` notebook can be run to obtain the bias numbers.
 If you use CogPhys in your research, please cite:
 
 ```bibtex
-@inproceedings{harish2025cogphys,
-  title={CogPhys: Assessing Cognitive Load via Multimodal Remote and Contact-based Physiological Sensing},
-  author={Harish, Anirudh Bindiganavale and Guo, Peikun and Ghanekar, Bhargav and Gupta, Diya and Rajavenkatanarayanan, Akilesh and Sharma, Manoj Kumar and August, Maureen and Sano, Akane and Veeraraghavan, Ashok},
-  booktitle={Neural Information Processing Systems},
-  year={2025}
+@inproceedings{
+harish2025cogphys,
+title={CogPhys: Assessing Cognitive Load via Multimodal Remote and Contact-based Physiological Sensing},
+author={Anirudh Bindiganavale Harish and Peikun Guo and Diya Gupta and Bhargav Ghanekar and Akilesh Rajavenkatanarayan and MANOJ KUMAR SHARMA and Maureen Elizabeth August and Akane Sano and Ashok Veeraraghavan},
+booktitle={The Thirty-ninth Annual Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+year={2025},
+url={https://openreview.net/forum?id=VJEcCMx16R}
 }
 ```
 
