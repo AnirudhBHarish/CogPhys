@@ -1,8 +1,20 @@
 # CogPhys: Assessing Cognitive Load via Multimodal Remote and Contact-based Physiological Sensing
 
-**Anirudh Bindiganavale Harish\*, Peikun Guo\*, Bhargav Ghanekar\*\*, Diya Gupta\*\***, Akilesh Rajavenkatanarayanan, Manoj Kumar Sharma, Maureen August, Akane Sano, Ashok Veeraraghavan
 
-[Paper] | [Dataset] | [Project Page] | [Supplementary]
+
+> __CogPhys: Assessing Cognitive Load via Multimodal Remote and Contact-based Physiological Sensing__  
+> [Anirudh Bindiganavale Harish](https://anirudhbharish.github.io/)\*, [Peikun Guo](https://www.linkedin.com/in/peikun-guo-2b911812b/)\*, [Bhargav Ghanekar](https://ghanekar11.github.io/)\*\*, [Diya Gupta](https://www.linkedin.com/in/diya-gupta2328/)\*\*, [Akilesh Rajavenkatanarayanan](https://www.linkedin.com/in/akileshrajan/), [Manoj Kumar Sharma](https://www.linkedin.com/in/manoj-sharma-5b2233159/), [Maureen August](https://www.linkedin.com/in/maureen-elizabeth-august-ph-d-94a1ab2/), [Akane Sano](https://akanesano.rice.edu/), [Ashok Veeraraghavan](https://computationalimaging.rice.edu/team/ashok-veeraraghavan/)<br/>
+> _NeurIPS Datasets and Benchmarks, December 2025_  
+> __[Project page](https://anirudhbharish.github.io/cogphys/)&nbsp;/ [Paper](https://papers.neurips.cc/paper_files/paper/2025/file/014e80b61aca7a85630e6da5d63427c6-Paper-Datasets_and_Benchmarks_Track.pdf)&nbsp;/ [Presentation](https://neurips.cc/media/neurips-2025/Slides/121616_SD1AOZC.pdf)&nbsp;/ [Supplement](https://openreview.net/attachment?id=VJEcCMx16R&name=supplementary_material)&nbsp;/ [Poster](https://neurips.cc/media/PosterPDFs/NeurIPS%202025/121616.png?t=1764218832.6174617)__
+
+
+## Requesting the Dataset
+
+Due to the compliance and licensing requirements surrounding this dataset, all requesting researchers must sign a formal Data User Agreement (DUA) prior to obtaining access. To initiate this process, please submit your request via email directly to mta@rice.edu. When sending your inquiry, kindly CC the following members so our team can track and expedite your request:
+
+1. Anirudh Bindiganavale Harish: anirudhbh@rice.edu
+2. Ashok Veeraraghavan: vashok@rice.edu
+3. Caroline Griffin: Caroline.A.Griffin@rice.edu 
 
 ## 📢 About
 
@@ -303,11 +315,11 @@ If you use CogPhys in your research, please cite:
 
 ```bibtex
 @inproceedings{
-harish2025cogphys,
+harish2026cogphys,
 title={CogPhys: Assessing Cognitive Load via Multimodal Remote and Contact-based Physiological Sensing},
-author={Anirudh Bindiganavale Harish and Peikun Guo and Diya Gupta and Bhargav Ghanekar and Akilesh Rajavenkatanarayan and MANOJ KUMAR SHARMA and Maureen Elizabeth August and Akane Sano and Ashok Veeraraghavan},
+author={Anirudh Bindiganavale Harish and Peikun Guo and Bhargav Ghanekar and Diya Gupta and Akilesh Rajavenkatanarayan and MANOJ KUMAR SHARMA and Maureen Elizabeth August and Akane Sano and Ashok Veeraraghavan},
 booktitle={The Thirty-ninth Annual Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
-year={2025},
+year={2026},
 url={https://openreview.net/forum?id=VJEcCMx16R}
 }
 ```
