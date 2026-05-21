@@ -16,6 +16,8 @@ For compliance purposes, all requesting researchers must sign a formal Data User
 - Ashok Veeraraghavan: vashok@rice.edu
 - Caroline Griffin: Caroline.A.Griffin@rice.edu 
 
+Please include your institutional affiliation and intended use case in your request.
+
 ## 📢 About
 
 Official repository for the 2025 NeurIPS DB Track paper - CogPhys, a comprehensive multimodal dataset for assessing cognitive load through physiological measurements. The dataset combines both remote (non-contact) and contact-based sensing modalities to enable robust cognitive load estimation in various conditions.
