@@ -10,7 +10,7 @@
 
 ## Requesting the Dataset
 
-Due to the compliance and licensing requirements surrounding this dataset, all requesting researchers must sign a formal Data User Agreement (DUA) prior to obtaining access. To initiate this process, please submit your request via email directly to mta@rice.edu. When sending your inquiry, kindly CC the following members so our team can track and expedite your request:
+For compliance purposes, all requesting researchers must sign a formal Data User Agreement (DUA) prior to obtaining access. To initiate this process, please submit your request via email directly to mta@rice.edu. When sending your inquiry, kindly CC the following members so our team can track and expedite your request:
 
 - Anirudh Bindiganavale Harish: anirudhbh@rice.edu
 - Ashok Veeraraghavan: vashok@rice.edu
